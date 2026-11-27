@@ -12,14 +12,12 @@ import kotlinx.coroutines.flow.map
 private val Context.dataStore by preferencesDataStore(name = "preferencias_cafeteria")
 
 data class Ajustes(
-    val sesionId: Int?, // id del usuario con sesión abierta (null = nadie)
-    val cafeteriaId: String?, // cafetería que eligió el alumno (null = todavía no elige)
-    val tiempos: Map<String, TiempoEspera> // tiempo de espera de cada cafetería
+    val sesionId: Int?,
+    val cafeteriaId: String?,
+    val tiempos: Map<String, TiempoEspera>
 )
 
-// Datos sueltos (clave-valor) que no necesitan una tabla: DataStore
 class Preferencias(private val context: Context) {
-
     private object Claves {
         val SESION = intPreferencesKey("sesion_id")
         val CAFETERIA = stringPreferencesKey("cafeteria_id")

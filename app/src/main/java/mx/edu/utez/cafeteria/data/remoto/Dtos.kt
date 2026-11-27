@@ -9,14 +9,6 @@ import mx.edu.utez.cafeteria.data.local.LineaEntity
 import mx.edu.utez.cafeteria.data.local.PedidoEntity
 import mx.edu.utez.cafeteria.data.local.UsuarioEntity
 
-/*
- * DTO = "objeto de transferencia": la forma exacta del JSON que viaja entre la app y la API.
- * Los campos son opcionales (?) porque Gson puede dejar null lo que no venga en el JSON;
- * al convertirlos a las clases de la app se ponen valores por defecto y nunca truena.
- */
-
-// ---------------- Lo que se manda ----------------
-
 data class LoginRequest(val usuario: String, val contrasena: String, val rol: String)
 
 data class RegistroRequest(val nombre: String, val matricula: String, val contrasena: String)
@@ -25,7 +17,6 @@ data class RestablecerRequest(val matricula: String, val nombre: String, val nue
 
 data class DisponibleRequest(val disponible: Boolean)
 
-// El precio NO se manda: el servidor lo calcula con los precios de su base
 data class ItemPedidoRequest(val productoId: Int, val opcion: String?, val nota: String?, val cantidad: Int)
 
 data class PedidoRequest(val usuarioId: Int, val cafeteriaId: String, val nota: String, val items: List<ItemPedidoRequest>)
@@ -33,8 +24,6 @@ data class PedidoRequest(val usuarioId: Int, val cafeteriaId: String, val nota: 
 data class CancelarRequest(val motivo: String)
 
 data class TiempoRequest(val tiempo: String)
-
-// ---------------- Lo que se recibe ----------------
 
 data class MensajeDto(val mensaje: String? = null)
 
@@ -51,7 +40,6 @@ data class UsuarioDto(
 
 data class OpcionDto(val nombre: String? = null, val detalle: String? = null, val extra: Int? = null)
 
-// Se usa en los dos sentidos: lo que regresa GET /api/productos y lo que se manda al crear o editar
 data class ProductoDto(
     val id: Int? = null,
     val cafeteriaId: String? = null,
@@ -99,8 +87,6 @@ data class PedidoDto(
 )
 
 data class CafeteriaDto(val id: String? = null, val nombre: String? = null, val tiempoEspera: String? = null)
-
-// ---------------- Conversiones JSON <-> clases de la app ----------------
 
 private fun categoriaDe(texto: String?): Categoria = Categoria.entries.find { it.name == texto } ?: Categoria.DIARIO
 
@@ -153,7 +139,6 @@ fun Producto.aDto(): ProductoDto = ProductoDto(
     creadoEn = creadoEn
 )
 
-// Un pedido del servidor se guarda en Room como un renglón de "pedidos" y varios de "lineas_pedido"
 fun PedidoDto.aEntidad(): PedidoEntity = PedidoEntity(
     numero = numero ?: 0,
     clienteNombre = clienteNombre.orEmpty(),

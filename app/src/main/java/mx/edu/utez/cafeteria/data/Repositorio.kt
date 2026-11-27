@@ -37,24 +37,12 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
-// Resultado de iniciar sesión o registrarse
 sealed interface ResultadoAuth {
     data object Exito : ResultadoAuth
     data class Error(val mensaje: String) : ResultadoAuth
 }
 
-/**
- * Único punto de entrada a los datos:
- * - API REST (Spring Boot): la fuente de verdad, compartida por todos los teléfonos.
- * - Room (tablas): copia local de lo que mandó la API. Las pantallas leen de aquí.
- * - DataStore (ajustes): sesión, cafetería elegida y tiempos de espera.
- *
- * Cada escritura (pedido nuevo, cambio de estado, platillo...) primero va a la API
- * y lo que responde el servidor se guarda en Room, así la pantalla se actualiza sola.
- * Si algo falla, la función lanza la excepción y el ViewModel muestra el mensaje.
- */
 class Repositorio(context: Context) {
-
     private val db = AppDatabase.obtener(context)
     private val usuarioDao = db.usuarioDao()
     private val productoDao = db.productoDao()
@@ -66,25 +54,16 @@ class Repositorio(context: Context) {
     val pedidos: Flow<List<Pedido>> = pedidoDao.observarTodos().map { lista -> lista.map { it.aPedido() } }
     val ajustes: Flow<Ajustes> = preferencias.ajustes
 
-    // Usuario con sesión abierta (o null si nadie ha iniciado sesión)
     @OptIn(ExperimentalCoroutinesApi::class)
     val sesion: Flow<Sesion?> = ajustes.map { it.sesionId }.distinctUntilChanged().flatMapLatest { id ->
         if (id == null) flowOf(null)
         else usuarioDao.observar(id).map { u -> u?.let { Sesion(it.id, it.nombre, it.matricula, it.correo, it.rol, it.cafeteriaId) } }
     }.distinctUntilChanged()
 
-    // ---------- Sincronización con la API ----------
-
-    /**
-     * Baja del servidor el menú, los pedidos que le tocan a esta sesión y los tiempos de espera,
-     * y los guarda en Room. El ViewModel la llama cada pocos segundos.
-     * Regresa false si no se pudo hablar con el servidor (la app sigue mostrando lo último que tenía).
-     */
     suspend fun sincronizar(sesion: Sesion?): Boolean = try {
         ClienteApi.usuarioId = sesion?.id
         productoDao.reemplazarTodos(api.productos().map { it.aProducto() })
         if (sesion != null) {
-            // Encargado: los pedidos de SU cafetería. Alumno: solo los suyos.
             val lista = if (sesion.rol == Rol.ENCARGADO) {
                 api.pedidos(cafeteriaId = sesion.cafeteriaId)
             } else {
@@ -98,12 +77,10 @@ class Repositorio(context: Context) {
         }
         true
     } catch (e: CancellationException) {
-        throw e // la corrutina se canceló (p. ej. cerró sesión): no es un error de red
+        throw e
     } catch (e: Exception) {
         false
     }
-
-    // ---------- Sesión ----------
 
     suspend fun iniciarSesion(usuario: String, contrasena: String, rol: Rol): ResultadoAuth = conServidor {
         entrar(api.login(LoginRequest(usuario.trim(), contrasena, rol.name)))
@@ -113,12 +90,10 @@ class Repositorio(context: Context) {
         entrar(api.registro(RegistroRequest(nombre.trim(), matricula.trim().uppercase(), contrasena)))
     }
 
-    // Cambiar contraseña olvidada: el servidor la verifica con la matrícula y el nombre registrado
     suspend fun restablecerContrasena(matricula: String, nombre: String, nueva: String): ResultadoAuth = conServidor {
         api.restablecer(RestablecerRequest(matricula.trim(), nombre.trim(), nueva))
     }
 
-    // Guarda al usuario que respondió el servidor y deja la sesión abierta (aunque se cierre la app)
     private suspend fun entrar(usuario: UsuarioDto) {
         val entidad = usuario.aEntidad()
         usuarioDao.guardar(entidad)
@@ -131,7 +106,6 @@ class Repositorio(context: Context) {
         preferencias.cerrarSesion()
     }
 
-    // Convierte las excepciones de red en un ResultadoAuth.Error con mensaje para la pantalla
     private suspend fun conServidor(accion: suspend () -> Unit): ResultadoAuth = try {
         accion()
         ResultadoAuth.Exito
@@ -141,16 +115,12 @@ class Repositorio(context: Context) {
         ResultadoAuth.Error(ClienteApi.mensajeDeError(e))
     }
 
-    // ---------- Platillos ----------
-
     suspend fun guardarProducto(producto: Producto) {
-        // Si la foto es nueva (un archivo del teléfono), primero se sube al servidor
         val fotoLocal = producto.foto?.takeIf { Fotos.esArchivoLocal(it) }
         val foto = if (fotoLocal != null) subirFoto(fotoLocal) else producto.foto
         val dto = producto.copy(foto = foto).aDto()
         val guardado = if (producto.id == 0) api.crearProducto(dto) else api.actualizarProducto(producto.id, dto)
         productoDao.guardar(guardado.aProducto())
-        // Ya está en el servidor: se borra la copia que quedó en el teléfono
         if (fotoLocal != null) Fotos.borrar(fotoLocal)
     }
 
@@ -161,7 +131,7 @@ class Repositorio(context: Context) {
     }
 
     suspend fun borrarProducto(producto: Producto) {
-        api.borrarProducto(producto.id) // el servidor también borra la foto
+        api.borrarProducto(producto.id)
         productoDao.borrar(producto)
         Fotos.borrar(producto.foto)
     }
@@ -170,9 +140,6 @@ class Repositorio(context: Context) {
         productoDao.guardar(api.cambiarDisponible(id, DisponibleRequest(disponible)).aProducto())
     }
 
-    // ---------- Pedidos ----------
-
-    // El servidor pone el nombre del alumno, calcula los precios y genera el número de pedido
     suspend fun crearPedido(sesion: Sesion, cafeteriaId: String, items: List<Pair<Producto, ItemCarrito>>, nota: String): Int {
         val peticion = PedidoRequest(
             usuarioId = sesion.id,
@@ -185,7 +152,6 @@ class Repositorio(context: Context) {
         return creado.numero ?: 0
     }
 
-    // RECIBIDO -> PREPARANDO -> LISTO -> ENTREGADO (el servidor decide el siguiente estado)
     suspend fun avanzarPedido(numero: Int) {
         guardarPedido(api.avanzarPedido(numero))
     }
@@ -198,17 +164,12 @@ class Repositorio(context: Context) {
         pedidoDao.guardar(dto.aEntidad(), dto.lineasEntidad())
     }
 
-    // ---------- Ajustes ----------
-
     suspend fun guardarCafeteria(id: String) = preferencias.guardarCafeteria(id)
 
-    // El tiempo de espera se cambia en el servidor para que lo vean todos los alumnos
     suspend fun guardarTiempo(cafeteriaId: String, tiempo: TiempoEspera) {
         api.cambiarTiempo(cafeteriaId, TiempoRequest(tiempo.name))
         preferencias.guardarTiempo(cafeteriaId, tiempo)
     }
-
-    // ---------- Conversión de Room a lo que usan las pantallas ----------
 
     private fun PedidoConLineas.aPedido(): Pedido {
         val dias = diasDesde(pedido.creadoEn)

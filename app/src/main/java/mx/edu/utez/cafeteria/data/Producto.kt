@@ -14,8 +14,6 @@ import mx.edu.utez.cafeteria.R
 import java.time.LocalDate
 import java.util.Locale
 
-// ---------------- Categorías (fijas) ----------------
-
 enum class Categoria(val titulo: String, val subtitulo: String, val icono: ImageVector) {
     ESPECIAL("Especial del día", "Cambia de lunes a viernes", Icons.Default.Star),
     DIARIO("Menú del Diario", "Lo que hay todos los días", Icons.Default.Restaurant),
@@ -24,18 +22,14 @@ enum class Categoria(val titulo: String, val subtitulo: String, val icono: Image
     POSTRES("Postres y pan", "Pan dulce, gelatinas y pays", Icons.Default.Cake)
 }
 
-// ---------------- Días de la semana ----------------
-
 object Dias {
     val nombres = listOf("Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo")
 
-    // 1 = lunes ... 7 = domingo
     fun hoy(): Int = LocalDate.now().dayOfWeek.value
 
     fun nombre(dia: Int): String = nombres.getOrElse(dia - 1) { "" }
 }
 
-// Qué se sirve de especial cada día (lunes a viernes). Cámbialo aquí.
 object EspecialesDelDia {
     data class Especial(val titulo: String, val descripcion: String)
 
@@ -48,36 +42,28 @@ object EspecialesDelDia {
     )
 }
 
-// ---------------- Opciones de un platillo ----------------
-
-// Ej. "Pollo empanizado", "Pechuga suave, dorada en freidora", extra = 0
 data class Opcion(val nombre: String, val detalle: String = "", val extra: Int = 0)
-
-// ---------------- Platillo (tabla "productos" en Room) ----------------
 
 @Entity(tableName = "productos", indices = [Index("cafeteriaId")])
 data class Producto(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val cafeteriaId: String, // "nido" o "balcon": cada cafetería tiene su propio menú
+    val cafeteriaId: String,
     val nombre: String,
-    val descripcion: String, // texto corto para las tarjetas
-    val precio: Int, // pesos enteros
+    val descripcion: String,
+    val precio: Int,
     val categoria: Categoria,
-    val dia: Int? = null, // solo especiales: 1 = lunes ... 5 = viernes
-    val detalle: String = "", // descripción larga en la hoja de detalle
-    val etiqueta: String? = null, // "Favorito", "Rápido", "Fit"...
-    // "res:nombre_drawable" para fotos incluidas en la app, o la ruta de un archivo tomado con la cámara
+    val dia: Int? = null,
+    val detalle: String = "",
+    val etiqueta: String? = null,
     val foto: String? = null,
     val disponible: Boolean = true,
     val prepMin: Int = 5,
     val prepMax: Int = 10,
-    val grupoOpciones: String? = null, // ej. "Tipo de milanesa" (si hay opciones, elegir una es obligatorio)
+    val grupoOpciones: String? = null,
     val opciones: List<Opcion> = emptyList(),
-    val recomendacion: String? = null, // ej. "Porción individual recomendada: 1–2 pzas"
+    val recomendacion: String? = null,
     val creadoEn: Long = System.currentTimeMillis()
 )
-
-// ---------------- Cafeterías (fijas) ----------------
 
 data class Cafeteria(
     val id: String,
@@ -114,26 +100,19 @@ object Cafeterias {
     fun porId(id: String?): Cafeteria = lista.find { it.id == id } ?: lista.first()
 }
 
-// ---------------- Usuarios ----------------
-
 enum class Rol { ALUMNO, ENCARGADO }
 
-// Quien tiene la sesión abierta
 data class Sesion(
     val id: Int,
     val nombre: String,
     val matricula: String,
     val correo: String,
     val rol: Rol,
-    val cafeteriaId: String? // solo encargados: la cafetería que atienden
+    val cafeteriaId: String?
 )
 
-// Datos del cliente dentro de un pedido
 data class Usuario(val nombre: String, val matricula: String)
 
-// ---------------- Carrito y pedidos ----------------
-
-// Un renglón del carrito: el mismo platillo con distinta opción o nota es otro renglón
 data class ItemCarrito(
     val productoId: Int,
     val opcion: String?,
@@ -160,20 +139,18 @@ enum class TiempoEspera(val rango: String, val etiqueta: String, val nivel: Stri
     ALTO("15-25", "Alta carga", "Saturado")
 }
 
-// Copia del platillo dentro de un pedido (si luego se edita o borra el platillo, el pedido no cambia)
 data class LineaPedido(
     val productoId: Int,
     val nombre: String,
     val opcion: String?,
     val nota: String?,
-    val precio: Int, // precio por pieza, ya con el extra de la opción
+    val precio: Int,
     val cantidad: Int,
     val foto: String?,
     val categoria: Categoria
 ) {
     val subtotal: Int get() = precio * cantidad
 
-    // "Pollo empanizado · Nota: salsa aparte"
     val detalle: String get() = listOfNotNull(opcion, nota?.takeIf { it.isNotBlank() }?.let { "Nota: $it" }).joinToString(" · ")
 }
 
@@ -185,7 +162,7 @@ data class Pedido(
     val estado: EstadoPedido,
     val creadoEn: Long,
     val hora: String,
-    val fecha: String, // "Hoy", "Ayer", "Jueves"...
+    val fecha: String,
     val deHoy: Boolean,
     val nota: String = "",
     val mostrador: String = "Mostrador 1",
@@ -194,8 +171,6 @@ data class Pedido(
 ) {
     val total: Int get() = lineas.sumOf { it.subtotal }
 }
-
-// ---------------- Formato de precios ----------------
 
 fun pesos(cantidad: Int): String = "\$$cantidad"
 

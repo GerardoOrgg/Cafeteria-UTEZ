@@ -25,14 +25,6 @@ import mx.edu.utez.cafeteria.data.Opcion
 import mx.edu.utez.cafeteria.data.Producto
 import mx.edu.utez.cafeteria.data.Rol
 
-/*
- * Room guarda en el teléfono una COPIA (caché) de lo que manda la API.
- * Las pantallas leen de aquí (Flow): así se ven al instante y siguen mostrando lo último
- * aunque el servidor no responda un momento. Quien manda es el servidor.
- */
-
-// ---------------- Tabla de usuarios ----------------
-
 @Entity(
     tableName = "usuarios",
     indices = [Index(value = ["matricula"], unique = true), Index(value = ["correo"], unique = true)]
@@ -40,14 +32,11 @@ import mx.edu.utez.cafeteria.data.Rol
 data class UsuarioEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val nombre: String,
-    val matricula: String, // encargados usan su correo aquí también
+    val matricula: String,
     val correo: String,
-    // La contraseña ya no se guarda en el teléfono: la revisa el servidor (como SHA-256)
     val rol: Rol,
     val cafeteriaId: String? = null
 )
-
-// ---------------- Tablas de pedidos ----------------
 
 @Entity(tableName = "pedidos", indices = [Index("cafeteriaId")])
 data class PedidoEntity(
@@ -86,14 +75,11 @@ data class LineaEntity(
     val categoria: Categoria
 )
 
-// Un pedido con sus platillos (Room arma la relación solo)
 data class PedidoConLineas(
     @Embedded val pedido: PedidoEntity,
     @Relation(parentColumn = "numero", entityColumn = "pedidoNumero")
     val lineas: List<LineaEntity>
 )
-
-// ---------------- Convertidor: lista de opciones <-> texto ----------------
 
 class Convertidores {
     private val separadorOpcion = "\u001E"
@@ -112,14 +98,11 @@ class Convertidores {
         }
 }
 
-// ---------------- DAOs ----------------
-
 @Dao
 interface UsuarioDao {
     @Query("SELECT * FROM usuarios WHERE id = :id")
     fun observar(id: Int): Flow<UsuarioEntity?>
 
-    // Guarda (o reemplaza) al usuario que regresó el servidor al iniciar sesión
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun guardar(usuario: UsuarioEntity)
 }
@@ -132,7 +115,6 @@ abstract class ProductoDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun insertarTodos(productos: List<Producto>)
 
-    // Inserta o reemplaza un platillo con el id que le dio el servidor
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun guardar(producto: Producto)
 
@@ -142,7 +124,6 @@ abstract class ProductoDao {
     @Query("DELETE FROM productos")
     abstract suspend fun borrarTodos()
 
-    // Cambia la copia local por lo que mandó el servidor: o se cambia todo o nada
     @Transaction
     open suspend fun reemplazarTodos(productos: List<Producto>) {
         borrarTodos()
@@ -156,7 +137,6 @@ abstract class PedidoDao {
     @Query("SELECT * FROM pedidos ORDER BY numero DESC")
     abstract fun observarTodos(): Flow<List<PedidoConLineas>>
 
-    // REPLACE: si el pedido ya estaba (mismo número), se actualiza
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun insertarPedido(pedido: PedidoEntity)
 
@@ -172,7 +152,6 @@ abstract class PedidoDao {
     @Query("DELETE FROM pedidos")
     abstract suspend fun borrarTodos()
 
-    // Guarda el pedido y sus platillos juntos: o se guarda todo o nada
     @Transaction
     open suspend fun guardar(pedido: PedidoEntity, lineas: List<LineaEntity>) {
         borrarLineas(pedido.numero)
@@ -180,7 +159,6 @@ abstract class PedidoDao {
         insertarLineas(lineas.map { it.copy(pedidoNumero = pedido.numero) })
     }
 
-    // Cambia todos los pedidos locales por los que mandó el servidor
     @Transaction
     open suspend fun reemplazarTodos(pedidos: List<Pair<PedidoEntity, List<LineaEntity>>>) {
         borrarTodasLasLineas()
@@ -192,11 +170,9 @@ abstract class PedidoDao {
     }
 }
 
-// ---------------- Base de datos ----------------
-
 @Database(
     entities = [UsuarioEntity::class, Producto::class, PedidoEntity::class, LineaEntity::class],
-    version = 3, // 3: la app ahora es caché de la API (sin contraseñas en el teléfono)
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Convertidores::class)
@@ -216,7 +192,6 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "cafeteria_utez.db"
                 )
-                    // Si cambias una tabla y subes la versión, borra y recrea la base (solo para desarrollo)
                     .fallbackToDestructiveMigration(true)
                     .build()
                     .also { INSTANCIA = it }

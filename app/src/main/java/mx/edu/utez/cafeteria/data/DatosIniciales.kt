@@ -4,23 +4,11 @@ import mx.edu.utez.cafeteria.data.Categoria.BEBIDAS
 import mx.edu.utez.cafeteria.data.Categoria.DIARIO
 import mx.edu.utez.cafeteria.data.Categoria.ESPECIAL
 
-/**
- * Datos de ejemplo SOLO para las vistas previas (@Preview) de Android Studio.
- *
- * El menú completo, las cuentas y los pedidos de ejemplo ahora viven en el servidor:
- * api/src/main/java/mx/edu/utez/cafeteriaapi/config/DatosIniciales.java
- * (se cargan en MySQL la primera vez que arranca la API).
- * Para cambiar precios o platillos usa el panel del encargado (Menú & Stock) o edita ese archivo.
- */
 object DatosIniciales {
-
     private const val NIDO = "nido"
-
-    // ---------- Atajos para escribir el menú corto ----------
 
     private fun o(nombre: String, extra: Int = 0, detalle: String = "") = Opcion(nombre, detalle, extra)
 
-    // Los ids se ponen en orden (1, 2, 3...) para que las vistas previas puedan referirse a ellos
     val productos: List<Producto> = listOf(
         Producto(
             id = 1, cafeteriaId = NIDO, nombre = "Taco Acorazado de Milanesa", descripcion = "Con arroz rojo y frijol de la olla",
