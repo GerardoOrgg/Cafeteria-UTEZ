@@ -67,4 +67,9 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.play.services.location)
     implementation(libs.kotlinx.coroutines.play.services)
+
+    // API REST en Spring Boot (Retrofit convierte el JSON a clases de Kotlin con Gson)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.gson)
+    implementation(libs.okhttp.logging)
 }
