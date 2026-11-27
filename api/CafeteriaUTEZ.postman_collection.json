@@ -1,0 +1,449 @@
+{
+  "info": {
+    "name": "Cafetería UTEZ API",
+    "description": "Peticiones de prueba para la API REST. Cambia la variable base por la IP de tu PC si pruebas desde otro equipo.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login alumno",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/auth/login",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario\": \"20213TI045\",\n  \"contrasena\": \"123456\",\n  \"rol\": \"ALUMNO\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login encargado Nido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/auth/login",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario\": \"nido@utez.edu.mx\",\n  \"contrasena\": \"nido123\",\n  \"rol\": \"ENCARGADO\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Registro alumno",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/auth/registro",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "registro"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Prueba Postman\",\n  \"matricula\": \"20253DS999\",\n  \"contrasena\": \"123456\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Restablecer contraseña",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/auth/restablecer",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "restablecer"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"matricula\": \"20253DS999\",\n  \"nombre\": \"Prueba Postman\",\n  \"nueva\": \"654321\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Productos",
+      "item": [
+        {
+          "name": "Menú de Nido de Halcón",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/api/productos?cafeteriaId=nido",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "productos"
+              ],
+              "query": [
+                {
+                  "key": "cafeteriaId",
+                  "value": "nido"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Menú de las dos cafeterías",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/api/productos",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "productos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear platillo (encargado)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Usuario-Id",
+                "value": "{{encargadoId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/productos",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "productos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Taco de prueba\",\n  \"descripcion\": \"Creado desde Postman\",\n  \"precio\": 20,\n  \"categoria\": \"DIARIO\",\n  \"prepMin\": 3,\n  \"prepMax\": 5,\n  \"opciones\": [\n    {\n      \"nombre\": \"Maíz\",\n      \"extra\": 0\n    },\n    {\n      \"nombre\": \"Harina\",\n      \"extra\": 5\n    }\n  ],\n  \"grupoOpciones\": \"Tortilla\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Marcar agotado",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-Usuario-Id",
+                "value": "{{encargadoId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/productos/1/disponible",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "productos",
+                "1",
+                "disponible"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"disponible\": false\n}"
+            }
+          }
+        },
+        {
+          "name": "Borrar platillo",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-Usuario-Id",
+                "value": "{{encargadoId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/productos/1",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "productos",
+                "1"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pedidos",
+      "item": [
+        {
+          "name": "Pedidos de una cafetería (encargado)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/api/pedidos?cafeteriaId=nido",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "pedidos"
+              ],
+              "query": [
+                {
+                  "key": "cafeteriaId",
+                  "value": "nido"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mis pedidos (alumno)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/api/pedidos?matricula=20213TI045",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "pedidos"
+              ],
+              "query": [
+                {
+                  "key": "matricula",
+                  "value": "20213TI045"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear pedido (alumno)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/pedidos",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "pedidos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": 1,\n  \"cafeteriaId\": \"nido\",\n  \"nota\": \"Sin cebolla\",\n  \"items\": [\n    {\n      \"productoId\": 25,\n      \"opcion\": \"Verde\",\n      \"nota\": \"Salsa aparte\",\n      \"cantidad\": 1\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Avanzar estado",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-Usuario-Id",
+                "value": "{{encargadoId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/pedidos/8/avanzar",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "pedidos",
+                "8",
+                "avanzar"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancelar pedido",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-Usuario-Id",
+                "value": "{{encargadoId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/pedidos/8/cancelar",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "pedidos",
+                "8",
+                "cancelar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivo\": \"Falta de ingrediente\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cafeterías",
+      "item": [
+        {
+          "name": "Tiempos de espera",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/api/cafeterias",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "cafeterias"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cambiar tiempo de espera",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-Usuario-Id",
+                "value": "{{encargadoId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/cafeterias/nido/tiempo",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "cafeterias",
+                "nido",
+                "tiempo"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tiempo\": \"ALTO\"\n}"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "encargadoId",
+      "value": "2"
+    }
+  ]
+}

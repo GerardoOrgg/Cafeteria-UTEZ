@@ -1,0 +1,10 @@
+# Compilados de Maven
+target/
+
+# Fotos que suben los encargados y base H2 local (cada quien tiene las suyas)
+fotos/
+datos/
+
+# IntelliJ
+.idea/
+*.iml
