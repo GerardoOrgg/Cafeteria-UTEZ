@@ -57,18 +57,15 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation("androidx.compose.material:material-icons-extended")
 
-    // Room y DataStore
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.datastore.preferences)
 
-    // Fotos (Coil) y ubicacion (GPS)
     implementation(libs.coil.compose)
     implementation(libs.play.services.location)
     implementation(libs.kotlinx.coroutines.play.services)
 
-    // API REST en Spring Boot (Retrofit convierte el JSON a clases de Kotlin con Gson)
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp.logging)
