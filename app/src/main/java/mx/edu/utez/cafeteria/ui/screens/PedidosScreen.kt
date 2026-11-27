@@ -52,6 +52,8 @@ import mx.edu.utez.cafeteria.data.Categoria
 import mx.edu.utez.cafeteria.data.EstadoPedido
 import mx.edu.utez.cafeteria.data.LineaPedido
 import mx.edu.utez.cafeteria.data.Pedido
+import mx.edu.utez.cafeteria.data.Rol
+import mx.edu.utez.cafeteria.data.Sesion
 import mx.edu.utez.cafeteria.data.pesos
 import mx.edu.utez.cafeteria.data.Usuario
 import mx.edu.utez.cafeteria.data.pesosDec
@@ -106,7 +108,7 @@ fun PedidosScreen(
                 }
             }
             items(activos, key = { it.numero }) { pedido ->
-                TarjetaPedidoActivo(pedido, state.usuario)
+                TarjetaPedidoActivo(pedido, pedido.cliente)
             }
             if (anteriores.isNotEmpty()) {
                 item {
@@ -180,8 +182,8 @@ private fun TarjetaPedidoActivo(pedido: Pedido, usuario: Usuario) {
                     Column(modifier = Modifier
                         .weight(1f)
                         .padding(horizontal = 12.dp)) {
-                        Text("${linea.cantidad}× ${linea.nombreLargo}", color = Cafe.Texto, style = MaterialTheme.typography.titleMedium, maxLines = 2)
-                        Text("${pesos(linea.precio)} c/u", color = Cafe.TextoSuave, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text("${linea.cantidad}× ${linea.nombre}", color = Cafe.Texto, style = MaterialTheme.typography.titleMedium, maxLines = 2)
+                        Text(linea.detalle.ifBlank { "${pesos(linea.precio)} c/u" }, color = Cafe.TextoSuave, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                     Text(pesosDec(linea.subtotal), color = Cafe.Texto, fontWeight = FontWeight.Bold)
                 }
@@ -305,7 +307,7 @@ private fun PedidosPreview() {
         numero = 104,
         cliente = Usuario("Juan Pérez", "20213TI045"),
         cafeteriaId = "nido",
-        lineas = listOf(LineaPedido(1, "Milanesa Crujiente", 55, 2, null, Categoria.ESPECIAL)),
+        lineas = listOf(LineaPedido(1, "Taco Acorazado de Milanesa", "Pollo empanizado", "Salsa aparte", 55, 2, null, Categoria.ESPECIAL)),
         estado = EstadoPedido.PREPARANDO,
         creadoEn = 0L,
         hora = "12:05 PM",
@@ -313,6 +315,6 @@ private fun PedidosPreview() {
         deHoy = true
     )
     CafeteriaTheme {
-        PedidosScreen(state = AppUiState(cafeteriaId = "nido", pedidos = listOf(activo)), onPedirDeNuevo = {}, onVolverAlMenu = {})
+        PedidosScreen(state = AppUiState(sesion = Sesion(1, "Juan Pérez", "20213TI045", "", Rol.ALUMNO, null), pedidos = listOf(activo)), onPedirDeNuevo = {}, onVolverAlMenu = {})
     }
 }

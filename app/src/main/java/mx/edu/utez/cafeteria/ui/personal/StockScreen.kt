@@ -42,6 +42,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import mx.edu.utez.cafeteria.data.Categoria
+import mx.edu.utez.cafeteria.data.Dias
 import mx.edu.utez.cafeteria.data.Producto
 import mx.edu.utez.cafeteria.data.pesos
 import mx.edu.utez.cafeteria.ui.AppUiState
@@ -90,7 +91,7 @@ fun StockScreen(
                 Column(modifier = Modifier
                     .weight(1f)
                     .padding(horizontal = 12.dp)) {
-                    Text("Platillos y Stock", color = Cafe.Texto, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text("Platillos y Stock · ${state.cafeteria.nombreCorto}", color = Cafe.Texto, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     Text(
                         "${state.productos.size} platillos · $agotados agotados",
                         color = Cafe.TextoSuave,
@@ -155,7 +156,8 @@ private fun FilaPlatillo(
                     textDecoration = if (disponible) null else TextDecoration.LineThrough
                 )
                 Text(
-                    "${pesos(producto.precio)} · " + if (disponible) "Disponible en barra" else "Agotado",
+                    "${pesos(producto.precio)} · " + (producto.dia?.let { "${Dias.nombre(it)} · " } ?: "") +
+                        if (disponible) "Disponible" else "Agotado",
                     color = if (disponible) Cafe.AzulClaro else Cafe.Rojo,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold

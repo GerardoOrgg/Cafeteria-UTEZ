@@ -37,7 +37,12 @@ import mx.edu.utez.cafeteria.ui.components.BotonAmbar
 import mx.edu.utez.cafeteria.ui.components.CajaIcono
 import mx.edu.utez.cafeteria.ui.components.EstadoVacio
 import mx.edu.utez.cafeteria.ui.components.EtiquetaSeccion
-import mx.edu.utez.cafeteria.ui.components.FilaProducto
+import mx.edu.utez.cafeteria.ui.components.Contador
+import mx.edu.utez.cafeteria.ui.components.Miniatura
+import mx.edu.utez.cafeteria.data.ItemCarrito
+import mx.edu.utez.cafeteria.data.Producto
+import mx.edu.utez.cafeteria.data.pesos
+import androidx.compose.ui.text.style.TextOverflow
 import mx.edu.utez.cafeteria.ui.components.Tarjeta
 import mx.edu.utez.cafeteria.ui.components.TopBarSimple
 import mx.edu.utez.cafeteria.ui.theme.Cafe
@@ -46,8 +51,8 @@ import mx.edu.utez.cafeteria.ui.theme.CafeteriaTheme
 @Composable
 fun CarritoScreen(
     state: AppUiState,
-    onAgregar: (Int) -> Unit,
-    onQuitar: (Int) -> Unit,
+    onSumar: (String) -> Unit,
+    onRestar: (String) -> Unit,
     onNota: (String) -> Unit,
     onConfirmar: () -> Unit,
     onCerrar: () -> Unit
@@ -87,14 +92,8 @@ fun CarritoScreen(
                 }
             }
             item { EtiquetaSeccion("Resumen de alimentos", Cafe.TextoSuave) }
-            items(state.lineasCarrito, key = { it.first.id }) { (producto, cantidad) ->
-                FilaProducto(
-                    producto = producto,
-                    cantidad = cantidad,
-                    agotado = false,
-                    onAgregar = { onAgregar(producto.id) },
-                    onQuitar = { onQuitar(producto.id) }
-                )
+            items(state.lineasCarrito, key = { it.second.clave }) { (producto, item) ->
+                FilaCarrito(producto, item, onSumar = { onSumar(item.clave) }, onRestar = { onRestar(item.clave) })
             }
             item {
                 OutlinedTextField(
@@ -157,13 +156,43 @@ fun CarritoScreen(
     }
 }
 
+// Un renglón del carrito: platillo, opción, nota, precio y +/-
+@Composable
+private fun FilaCarrito(producto: Producto, item: ItemCarrito, onSumar: () -> Unit, onRestar: () -> Unit) {
+    Surface(color = Cafe.TarjetaClara, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
+        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Miniatura(producto.foto, producto.categoria)
+            Column(modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 12.dp)) {
+                Text(producto.nombre, color = Cafe.Texto, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                val detalle = listOfNotNull(item.opcion, item.nota.takeIf { it.isNotBlank() }?.let { "Nota: $it" }).joinToString(" · ")
+                if (detalle.isNotBlank()) {
+                    Text(detalle, color = Cafe.AzulClaro, style = MaterialTheme.typography.bodySmall)
+                }
+                Text(
+                    "${pesos(producto.precio + item.extra)} c/u · ${pesos((producto.precio + item.extra) * item.cantidad)}",
+                    color = Cafe.AmbarTexto,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Contador(item.cantidad, onSumar, onRestar)
+        }
+    }
+}
+
 @Preview(heightDp = 900)
 @Composable
 private fun CarritoPreview() {
     CafeteriaTheme {
         CarritoScreen(
-            state = AppUiState(cafeteriaId = "nido", productos = DatosIniciales.productos, carrito = mapOf(1 to 2, 11 to 1)),
-            onAgregar = {}, onQuitar = {}, onNota = {}, onConfirmar = {}, onCerrar = {}
+            state = AppUiState(
+                cafeteriaElegida = "nido",
+                productos = DatosIniciales.productos,
+                carrito = listOf(ItemCarrito(1, "Pollo empanizado", 0, "Salsa aparte", 2))
+            ),
+            onSumar = {}, onRestar = {}, onNota = {}, onConfirmar = {}, onCerrar = {}
         )
     }
 }

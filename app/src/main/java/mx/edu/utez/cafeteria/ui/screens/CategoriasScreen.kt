@@ -20,6 +20,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import mx.edu.utez.cafeteria.data.Categoria
+import mx.edu.utez.cafeteria.data.Dias
+import mx.edu.utez.cafeteria.data.EspecialesDelDia
 import mx.edu.utez.cafeteria.ui.AppUiState
 import mx.edu.utez.cafeteria.ui.components.BarraCarrito
 import mx.edu.utez.cafeteria.ui.components.EstadoVacio
@@ -31,6 +33,7 @@ import mx.edu.utez.cafeteria.ui.theme.Cafe
 fun CategoriasScreen(
     state: AppUiState,
     onCategoria: (Categoria) -> Unit,
+    onAbrir: (Int) -> Unit,
     onAgregar: (Int) -> Unit,
     onQuitar: (Int) -> Unit,
     onVerCarrito: () -> Unit
@@ -75,10 +78,29 @@ fun CategoriasScreen(
                 }
             }
             if (productos.isEmpty()) {
-                item { EstadoVacio(Icons.Default.NoFood, "Sin platillos aquí", "La cafetería todavía no agrega platillos a esta categoría.") }
+                item { EstadoVacio(Icons.Default.NoFood, "Sin platillos aquí", "${state.cafeteria.nombreCorto} no tiene platillos en esta categoría.") }
             }
-            items(productos, key = { it.id }) { p ->
-                FilaProducto(p, state.cantidad(p.id), !p.disponible, { onAgregar(p.id) }, { onQuitar(p.id) })
+            if (state.categoria == Categoria.ESPECIAL) {
+                // Especiales agrupados por día; solo los de hoy se pueden pedir
+                (1..5).forEach { dia ->
+                    val delDia = productos.filter { it.dia == dia }
+                    if (delDia.isNotEmpty()) {
+                        item(key = "dia_$dia") {
+                            val titulo = EspecialesDelDia.porDia[dia]?.titulo.orEmpty()
+                            EtiquetaSeccion(
+                                "${Dias.nombre(dia)} · $titulo" + if (dia == state.hoy) " · HOY" else "",
+                                if (dia == state.hoy) Cafe.AmbarTexto else Cafe.TextoSuave
+                            )
+                        }
+                        items(delDia, key = { it.id }) { p ->
+                            FilaProducto(p, state.cantidadDe(p.id), state.motivoNoPedible(p), { onAbrir(p.id) }, { onAgregar(p.id) }, { onQuitar(p.id) })
+                        }
+                    }
+                }
+            } else {
+                items(productos, key = { it.id }) { p ->
+                    FilaProducto(p, state.cantidadDe(p.id), state.motivoNoPedible(p), { onAbrir(p.id) }, { onAgregar(p.id) }, { onQuitar(p.id) })
+                }
             }
         }
         BarraCarrito(state.totalPiezas, state.totalCarrito, onVerCarrito)

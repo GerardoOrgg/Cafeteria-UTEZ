@@ -42,6 +42,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import mx.edu.utez.cafeteria.data.Categoria
+import mx.edu.utez.cafeteria.data.Dias
+import mx.edu.utez.cafeteria.data.EspecialesDelDia
 import mx.edu.utez.cafeteria.data.Producto
 import mx.edu.utez.cafeteria.data.pesos
 import mx.edu.utez.cafeteria.ui.AppUiState
@@ -54,9 +56,6 @@ import mx.edu.utez.cafeteria.ui.components.FilaProducto
 import mx.edu.utez.cafeteria.ui.components.FotoPlatillo
 import mx.edu.utez.cafeteria.ui.sensores.DetectorAgitar
 import mx.edu.utez.cafeteria.ui.theme.Cafe
-import java.time.LocalDate
-import java.time.format.TextStyle
-import java.util.Locale
 
 @Composable
 fun MenuScreen(
@@ -66,6 +65,7 @@ fun MenuScreen(
     onAgregar: (Int) -> Unit,
     onQuitar: (Int) -> Unit,
     onVerCarrito: () -> Unit,
+    onAbrir: (Int) -> Unit,
     onVerCategoria: (Categoria) -> Unit,
     onAgitar: () -> Unit,
     onCerrarSugerencia: () -> Unit
@@ -76,10 +76,7 @@ fun MenuScreen(
     state.sugerencia?.let { sugerido ->
         DialogoSugerencia(
             producto = sugerido,
-            onAgregar = {
-                onAgregar(sugerido.id)
-                onCerrarSugerencia()
-            },
+            onAgregar = { onAbrir(sugerido.id) },
             onOtra = onAgitar,
             onCerrar = onCerrarSugerencia
         )
@@ -131,7 +128,7 @@ fun MenuScreen(
 
             if (state.busqueda.isNotBlank()) {
                 val texto = state.busqueda.trim()
-                val resultados = state.productos.filter {
+                val resultados = state.menu.filter {
                     it.nombre.contains(texto, ignoreCase = true) || it.descripcion.contains(texto, ignoreCase = true)
                 }
                 item {
@@ -142,7 +139,7 @@ fun MenuScreen(
                     )
                 }
                 items(resultados, key = { it.id }) { p ->
-                    FilaProducto(p, state.cantidad(p.id), !p.disponible, { onAgregar(p.id) }, { onQuitar(p.id) })
+                    FilaProducto(p, state.cantidadDe(p.id), state.motivoNoPedible(p), { onAbrir(p.id) }, { onAgregar(p.id) }, { onQuitar(p.id) })
                 }
             } else {
                 item {
@@ -158,9 +155,9 @@ fun MenuScreen(
                         }
                     }
                 }
-                val especiales = state.productosDe(Categoria.ESPECIAL)
-                if (especiales.isNotEmpty()) {
-                    item { TarjetaEspecial(state, especiales, onAgregar, onQuitar) }
+                // Especial del día: solo en cafeterías que tienen especiales (Nido de Halcón)
+                if (state.productosDe(Categoria.ESPECIAL).isNotEmpty()) {
+                    item { TarjetaEspecial(state, onAbrir, onAgregar, onQuitar, onVerCategoria) }
                 }
                 val diario = state.productosDe(Categoria.DIARIO)
                 if (diario.isNotEmpty()) {
@@ -178,7 +175,9 @@ fun MenuScreen(
                             fila.forEach { p ->
                                 TarjetaPlatillo(
                                     producto = p,
-                                    cantidad = state.cantidad(p.id),
+                                    cantidad = state.cantidadDe(p.id),
+                                    motivo = state.motivoNoPedible(p),
+                                    onAbrir = { onAbrir(p.id) },
                                     onAgregar = { onAgregar(p.id) },
                                     onQuitar = { onQuitar(p.id) },
                                     modifier = Modifier.weight(1f)
@@ -212,11 +211,14 @@ fun MenuScreen(
 @Composable
 private fun TarjetaEspecial(
     state: AppUiState,
-    especiales: List<Producto>,
+    onAbrir: (Int) -> Unit,
     onAgregar: (Int) -> Unit,
-    onQuitar: (Int) -> Unit
+    onQuitar: (Int) -> Unit,
+    onVerCategoria: (Categoria) -> Unit
 ) {
-    val dia = LocalDate.now().dayOfWeek.getDisplayName(TextStyle.FULL, Locale.forLanguageTag("es-MX"))
+    val hoy = state.hoy
+    val especial = EspecialesDelDia.porDia[hoy]
+    val especiales = state.especialesDeHoy
     Surface(shape = RoundedCornerShape(20.dp), color = Cafe.Tarjeta) {
         Column(
             modifier = Modifier
@@ -229,19 +231,29 @@ private fun TarjetaEspecial(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Star, contentDescription = null, tint = Cafe.AmbarTexto, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
-                        EtiquetaSeccion("Especial del $dia")
+                        EtiquetaSeccion("Especial del ${Dias.nombre(hoy)}")
                     }
-                    Text("Tacos Acorazados UTEZ", color = Cafe.Texto, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                     Text(
-                        "Hechos al momento sobre cama de arroz rojo y frijoles refritos.",
+                        especial?.titulo ?: "Hoy no hay especial",
+                        color = Cafe.Texto,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        especial?.descripcion ?: "El especial es de lunes a viernes. El lunes: ${EspecialesDelDia.porDia[1]?.titulo}.",
                         color = Cafe.TextoSuave,
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
-                Chip("${state.tiempoEspera.rango} min", Cafe.Ambar, Cafe.SobreAmbar, icono = Icons.Default.Bolt)
+                if (especial != null) {
+                    Chip("${state.tiempoEspera.rango} min", Cafe.Ambar, Cafe.SobreAmbar, icono = Icons.Default.Bolt)
+                }
             }
             especiales.forEach { p ->
-                FilaProducto(p, state.cantidad(p.id), !p.disponible, { onAgregar(p.id) }, { onQuitar(p.id) })
+                FilaProducto(p, state.cantidadDe(p.id), state.motivoNoPedible(p), { onAbrir(p.id) }, { onAgregar(p.id) }, { onQuitar(p.id) })
+            }
+            TextButton(onClick = { onVerCategoria(Categoria.ESPECIAL) }) {
+                Text("Ver los especiales de toda la semana", color = Cafe.AmbarTexto, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -251,12 +263,14 @@ private fun TarjetaEspecial(
 private fun TarjetaPlatillo(
     producto: Producto,
     cantidad: Int,
+    motivo: String?,
+    onAbrir: () -> Unit,
     onAgregar: () -> Unit,
     onQuitar: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val agotado = !producto.disponible
-    Surface(color = Cafe.Tarjeta, shape = RoundedCornerShape(16.dp), modifier = modifier) {
+    val agotado = motivo != null
+    Surface(onClick = onAbrir, color = Cafe.Tarjeta, shape = RoundedCornerShape(16.dp), modifier = modifier) {
         Column {
             Box {
                 FotoPlatillo(
@@ -275,7 +289,7 @@ private fun TarjetaPlatillo(
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(producto.nombre, color = Cafe.Texto, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
-                    if (agotado) "Agotado temporalmente" else producto.descripcion,
+                    motivo ?: producto.descripcion,
                     color = if (agotado) Cafe.Rojo else Cafe.TextoSuave,
                     style = MaterialTheme.typography.bodySmall,
                     maxLines = 1,

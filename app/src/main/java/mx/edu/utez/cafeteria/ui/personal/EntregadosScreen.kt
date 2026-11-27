@@ -200,5 +200,5 @@ private fun TarjetaCancelada(pedido: Pedido) {
 @Preview(heightDp = 1600, backgroundColor = 0xFF0B1324, showBackground = true)
 @Composable
 private fun EntregadosPreview() {
-    CafeteriaTheme { EntregadosScreen(AppUiState(cafeteriaId = "nido")) }
+    CafeteriaTheme { EntregadosScreen(AppUiState(cafeteriaElegida = "nido")) }
 }

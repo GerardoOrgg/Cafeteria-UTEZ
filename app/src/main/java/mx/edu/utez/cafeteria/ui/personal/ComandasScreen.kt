@@ -125,9 +125,14 @@ fun FilasProductos(pedido: Pedido) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Miniatura(linea.foto, linea.categoria, 32.dp)
                     Text("${linea.cantidad}×", modifier = Modifier.padding(start = 10.dp), color = Cafe.AmbarTexto, fontWeight = FontWeight.Bold)
-                    Text(linea.nombreLargo, modifier = Modifier
+                    Column(modifier = Modifier
                         .weight(1f)
-                        .padding(horizontal = 6.dp), color = Cafe.Texto, style = MaterialTheme.typography.bodyMedium)
+                        .padding(horizontal = 6.dp)) {
+                        Text(linea.nombre, color = Cafe.Texto, style = MaterialTheme.typography.bodyMedium)
+                        if (linea.detalle.isNotBlank()) {
+                            Text(linea.detalle, color = Cafe.AzulClaro, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
                     Text(pesosDec(linea.subtotal), color = Cafe.Texto, style = MaterialTheme.typography.bodyMedium)
                 }
             }
@@ -176,5 +181,5 @@ private fun TarjetaComanda(pedido: Pedido, onAvanzar: () -> Unit, onCancelar: ()
 @Preview(heightDp = 1200, backgroundColor = 0xFF0B1324, showBackground = true)
 @Composable
 private fun ComandasPreview() {
-    CafeteriaTheme { ComandasScreen(AppUiState(cafeteriaId = "nido"), onAvanzar = {}, onCancelar = {}) }
+    CafeteriaTheme { ComandasScreen(AppUiState(cafeteriaElegida = "nido"), onAvanzar = {}, onCancelar = {}) }
 }

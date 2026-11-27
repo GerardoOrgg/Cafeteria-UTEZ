@@ -7,9 +7,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.GridView
@@ -19,19 +21,27 @@ import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.delay
 import mx.edu.utez.cafeteria.data.Cafeterias
 import mx.edu.utez.cafeteria.ui.AppUiState
 import mx.edu.utez.cafeteria.ui.CafeteriaViewModel
@@ -48,6 +58,8 @@ import mx.edu.utez.cafeteria.ui.personal.SedeScreen
 import mx.edu.utez.cafeteria.ui.personal.StockScreen
 import mx.edu.utez.cafeteria.ui.screens.CarritoScreen
 import mx.edu.utez.cafeteria.ui.screens.CategoriasScreen
+import mx.edu.utez.cafeteria.ui.screens.DetallePlatilloSheet
+import mx.edu.utez.cafeteria.ui.screens.LoginScreen
 import mx.edu.utez.cafeteria.ui.screens.MenuScreen
 import mx.edu.utez.cafeteria.ui.screens.PedidosScreen
 import mx.edu.utez.cafeteria.ui.screens.PerfilScreen
@@ -55,64 +67,118 @@ import mx.edu.utez.cafeteria.ui.screens.SeleccionCafeteriaScreen
 import mx.edu.utez.cafeteria.ui.theme.Cafe
 import mx.edu.utez.cafeteria.ui.ubicacion.CandadoUbicacion
 
-enum class Pantalla { SELECCION, ALUMNO, PERSONAL }
-
 @Composable
 fun CafeteriaApp(viewModel: CafeteriaViewModel = viewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // Primero el candado de GPS: fuera de la UTEZ no se ve nada de la app
+    // 1. Candado de GPS (se puede apagar en Configuracion.VALIDAR_UBICACION)
     CandadoUbicacion {
-        if (state.cargando) {
-            Box(Modifier.fillMaxSize().background(Cafe.Fondo), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Cafe.Ambar)
-            }
-        } else {
+        Box(Modifier.fillMaxSize()) {
             ContenidoApp(state, viewModel)
+            // Avisos del servidor encima de cualquier pantalla
+            AvisosServidor(state, viewModel::limpiarMensaje)
         }
     }
 }
 
 @Composable
 private fun ContenidoApp(state: AppUiState, viewModel: CafeteriaViewModel) {
-        // Si ya eligió cafetería antes (guardado en DataStore), entra directo al menú
-        var pantalla by rememberSaveable { mutableStateOf<Pantalla?>(null) }
-        LaunchedEffect(Unit) {
-            if (pantalla == null) pantalla = if (state.cafeteriaId == null) Pantalla.SELECCION else Pantalla.ALUMNO
+    val sesion = state.sesion
+    when {
+        state.cargando -> Box(Modifier.fillMaxSize().background(Cafe.Fondo), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = Cafe.Ambar)
         }
 
-        when (pantalla) {
-            null -> Unit
+        // 2. Sin sesión: pantalla de inicio de sesión (Estudiante / Encargado)
+        sesion == null -> LoginScreen(
+            onIniciarSesion = viewModel::iniciarSesion,
+            onRegistrar = viewModel::registrarAlumno,
+            onRestablecer = viewModel::restablecerContrasena
+        )
 
-            Pantalla.SELECCION -> {
-                val puedeRegresar = state.cafeteriaId != null
-                BackHandler(enabled = puedeRegresar) { pantalla = Pantalla.ALUMNO }
-                SeleccionCafeteriaScreen(
-                    cafeterias = Cafeterias.lista,
-                    onElegir = {
-                        viewModel.elegirCafeteria(it)
-                        pantalla = Pantalla.ALUMNO
-                    },
-                    onAtras = if (puedeRegresar) ({ pantalla = Pantalla.ALUMNO }) else null
-                )
-            }
-
-            Pantalla.ALUMNO -> AppAlumno(
-                state = state,
-                viewModel = viewModel,
-                onCambiarCafeteria = { pantalla = Pantalla.SELECCION },
-                onAbrirPanel = { pantalla = Pantalla.PERSONAL }
-            )
-
-            Pantalla.PERSONAL -> PanelPersonal(
-                state = state,
-                viewModel = viewModel,
-                onSalir = { pantalla = Pantalla.ALUMNO }
-            )
+        // 3. Encargado: panel de SU cafetería. key() reinicia las pestañas al cambiar de cuenta
+        state.esEncargado -> key(sesion.id) {
+            PanelEncargado(state, viewModel)
         }
+
+        // 4. Alumno: elige cafetería y pide
+        else -> key(sesion.id) {
+            FlujoAlumno(state, viewModel)
+        }
+    }
 }
 
-// ---------------- App del alumno ----------------
+// Arriba: franja roja si no hay conexión con la API. Abajo: mensajes (pedido enviado, errores...)
+@Composable
+private fun AvisosServidor(state: AppUiState, onCerrarMensaje: () -> Unit) {
+    Box(Modifier.fillMaxSize()) {
+        if (!state.conectado && state.sesion != null) {
+            Text(
+                "Sin conexión con el servidor · reintentando…",
+                color = Color.White,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .background(Cafe.Rojo)
+                    .statusBarsPadding()
+                    .padding(vertical = 6.dp)
+            )
+        }
+        state.mensaje?.let { mensaje ->
+            // Se quita solo a los 3.5 segundos (o al tocarlo)
+            LaunchedEffect(mensaje) {
+                delay(3500)
+                onCerrarMensaje()
+            }
+            Surface(
+                onClick = onCerrarMensaje,
+                color = Cafe.TarjetaClara,
+                shape = RoundedCornerShape(14.dp),
+                shadowElevation = 6.dp,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .padding(start = 16.dp, end = 16.dp, bottom = 96.dp)
+            ) {
+                Text(
+                    mensaje,
+                    color = Cafe.Texto,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                )
+            }
+        }
+    }
+}
+
+// ---------------- Alumno ----------------
+
+@Composable
+private fun FlujoAlumno(state: AppUiState, viewModel: CafeteriaViewModel) {
+    var cambiandoCafeteria by rememberSaveable { mutableStateOf(false) }
+
+    if (state.cafeteriaElegida == null || cambiandoCafeteria) {
+        val puedeRegresar = state.cafeteriaElegida != null
+        BackHandler(enabled = puedeRegresar) { cambiandoCafeteria = false }
+        SeleccionCafeteriaScreen(
+            cafeterias = Cafeterias.lista,
+            onElegir = {
+                viewModel.elegirCafeteria(it)
+                cambiandoCafeteria = false
+            },
+            onAtras = if (puedeRegresar) ({ cambiandoCafeteria = false }) else null
+        )
+    } else {
+        AppAlumno(
+            state = state,
+            viewModel = viewModel,
+            onCambiarCafeteria = { cambiandoCafeteria = true }
+        )
+    }
+}
 
 private const val TAB_MENU = 0
 private const val TAB_CATEGORIAS = 1
@@ -123,8 +189,7 @@ private const val TAB_PERFIL = 3
 private fun AppAlumno(
     state: AppUiState,
     viewModel: CafeteriaViewModel,
-    onCambiarCafeteria: () -> Unit,
-    onAbrirPanel: () -> Unit
+    onCambiarCafeteria: () -> Unit
 ) {
     var tab by rememberSaveable { mutableIntStateOf(TAB_MENU) }
     var verCarrito by rememberSaveable { mutableStateOf(false) }
@@ -133,11 +198,22 @@ private fun AppAlumno(
         if (verCarrito) verCarrito = false else tab = TAB_MENU
     }
 
+    // Hoja de detalle del platillo (se abre al tocar cualquier platillo)
+    state.detalle?.let { producto ->
+        DetallePlatilloSheet(
+            producto = producto,
+            cafeteria = state.cafeteria,
+            motivo = state.motivoNoPedible(producto),
+            onAgregar = viewModel::agregarItem,
+            onCerrar = viewModel::cerrarDetalle
+        )
+    }
+
     if (verCarrito) {
         CarritoScreen(
             state = state,
-            onAgregar = viewModel::agregar,
-            onQuitar = viewModel::quitar,
+            onSumar = viewModel::sumar,
+            onRestar = viewModel::restar,
             onNota = viewModel::cambiarNota,
             onConfirmar = {
                 viewModel.confirmarPedido()
@@ -175,9 +251,10 @@ private fun AppAlumno(
                     state = state,
                     onCambiarCafeteria = onCambiarCafeteria,
                     onBuscar = viewModel::buscar,
-                    onAgregar = viewModel::agregar,
-                    onQuitar = viewModel::quitar,
+                    onAgregar = viewModel::agregarRapido,
+                    onQuitar = viewModel::quitarUno,
                     onVerCarrito = abrirCarrito,
+                    onAbrir = viewModel::abrirDetalle,
                     onVerCategoria = {
                         viewModel.elegirCategoria(it)
                         tab = TAB_CATEGORIAS
@@ -189,8 +266,9 @@ private fun AppAlumno(
                 TAB_CATEGORIAS -> CategoriasScreen(
                     state = state,
                     onCategoria = viewModel::elegirCategoria,
-                    onAgregar = viewModel::agregar,
-                    onQuitar = viewModel::quitar,
+                    onAbrir = viewModel::abrirDetalle,
+                    onAgregar = viewModel::agregarRapido,
+                    onQuitar = viewModel::quitarUno,
                     onVerCarrito = abrirCarrito
                 )
 
@@ -205,16 +283,15 @@ private fun AppAlumno(
 
                 else -> PerfilScreen(
                     state = state,
-                    onGuardarUsuario = viewModel::guardarUsuario,
                     onCambiarCafeteria = onCambiarCafeteria,
-                    onAbrirPanel = onAbrirPanel
+                    onCerrarSesion = viewModel::cerrarSesion
                 )
             }
         }
     }
 }
 
-// ---------------- Panel del personal ----------------
+// ---------------- Encargado ----------------
 
 private const val TAB_COMANDAS = 0
 private const val TAB_ENTREGADOS = 1
@@ -224,25 +301,18 @@ private const val TAB_SEDE = 3
 private const val PLATILLO_NUEVO = -1 // valor especial: abrir el formulario vacío
 
 @Composable
-private fun PanelPersonal(
-    state: AppUiState,
-    viewModel: CafeteriaViewModel,
-    onSalir: () -> Unit
-) {
+private fun PanelEncargado(state: AppUiState, viewModel: CafeteriaViewModel) {
     var tab by rememberSaveable { mutableIntStateOf(TAB_COMANDAS) }
     // null = no se está editando; -1 = platillo nuevo; otro número = id del platillo a editar
     var editandoId by rememberSaveable { mutableStateOf<Int?>(null) }
 
-    BackHandler(enabled = editandoId == null) {
-        if (tab != TAB_COMANDAS) tab = TAB_COMANDAS else onSalir()
-    }
+    BackHandler(enabled = editandoId == null && tab != TAB_COMANDAS) { tab = TAB_COMANDAS }
 
     val idEditando = editandoId
     if (idEditando != null) {
-        val original = state.productos.find { it.id == idEditando }
         BackHandler { editandoId = null }
         EditarPlatilloScreen(
-            original = if (idEditando == PLATILLO_NUEVO) null else original,
+            original = if (idEditando == PLATILLO_NUEVO) null else state.menu.find { it.id == idEditando },
             onGuardar = { producto, fotoAnterior ->
                 viewModel.guardarPlatillo(producto, fotoAnterior)
                 editandoId = null
@@ -263,7 +333,7 @@ private fun PanelPersonal(
                     .padding(horizontal = 16.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                LogoApp("Panel de cafetería")
+                LogoApp(state.cafeteria.nombreCorto)
                 Spacer(Modifier.weight(1f))
                 Chip("En servicio", punto = Cafe.Verde)
                 Spacer(Modifier.width(10.dp))
@@ -298,9 +368,8 @@ private fun PanelPersonal(
                 )
                 else -> SedeScreen(
                     state = state,
-                    onCambiarSede = viewModel::elegirCafeteria,
                     onTiempo = viewModel::cambiarTiempoEspera,
-                    onSalir = onSalir
+                    onCerrarSesion = viewModel::cerrarSesion
                 )
             }
         }

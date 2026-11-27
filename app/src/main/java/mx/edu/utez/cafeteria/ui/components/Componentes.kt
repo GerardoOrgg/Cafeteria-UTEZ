@@ -369,16 +369,19 @@ fun Miniatura(foto: String?, categoria: Categoria, tamano: Dp = 44.dp) {
     )
 }
 
-// Fila de platillo: especial del día, búsqueda, categorías y carrito
+// Fila de platillo: especial del día, búsqueda y categorías. Tocarla abre la hoja de detalle.
+// motivo != null significa que no se puede pedir (agotado, o especial de otro día)
 @Composable
 fun FilaProducto(
     producto: Producto,
     cantidad: Int,
-    agotado: Boolean,
+    motivo: String?,
+    onAbrir: () -> Unit,
     onAgregar: () -> Unit,
     onQuitar: () -> Unit
 ) {
-    Surface(color = Cafe.TarjetaClara, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
+    val bloqueado = motivo != null
+    Surface(onClick = onAbrir, color = Cafe.TarjetaClara, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -388,15 +391,15 @@ fun FilaProducto(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     producto.nombre,
-                    color = if (agotado) Cafe.TextoSuave else Cafe.Texto,
+                    color = if (bloqueado) Cafe.TextoSuave else Cafe.Texto,
                     style = MaterialTheme.typography.titleMedium,
-                    textDecoration = if (agotado) TextDecoration.LineThrough else null,
+                    textDecoration = if (!producto.disponible) TextDecoration.LineThrough else null,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    if (agotado) "Agotado temporalmente" else producto.descripcion,
-                    color = if (agotado) Cafe.Rojo else Cafe.TextoSuave,
+                    motivo ?: producto.descripcion,
+                    color = if (bloqueado) Cafe.Rojo else Cafe.TextoSuave,
                     style = MaterialTheme.typography.bodySmall,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -404,7 +407,7 @@ fun FilaProducto(
             }
             Text(pesos(producto.precio), color = Cafe.AmbarTexto, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             if (cantidad == 0) {
-                BotonRedondo(Icons.Default.Add, "Agregar ${producto.nombre}", onAgregar, enabled = !agotado)
+                BotonRedondo(Icons.Default.Add, "Agregar ${producto.nombre}", onAgregar, enabled = !bloqueado)
             } else {
                 Contador(cantidad, onAgregar, onQuitar)
             }
