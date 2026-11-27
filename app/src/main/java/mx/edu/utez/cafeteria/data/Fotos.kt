@@ -3,12 +3,19 @@ package mx.edu.utez.cafeteria.data
 import android.content.Context
 import android.net.Uri
 import androidx.core.content.FileProvider
+import mx.edu.utez.cafeteria.config.Configuracion
 import java.io.File
 
 // Manejo de fotos de platillos: se guardan en la carpeta privada de la app (files/fotos)
+// y al guardar el platillo se suben a la API, que las sirve en http://IP:8080/fotos/...
 object Fotos {
 
     private const val PREFIJO_RECURSO = "res:"
+    private const val PREFIJO_SERVIDOR = "/fotos/"
+
+    // true = foto que solo existe en este teléfono (todavía no se sube al servidor)
+    fun esArchivoLocal(foto: String): Boolean =
+        !foto.startsWith(PREFIJO_RECURSO) && !foto.startsWith(PREFIJO_SERVIDOR)
 
     private fun carpeta(context: Context): File =
         File(context.filesDir, "fotos").apply { mkdirs() }
@@ -32,9 +39,10 @@ object Fotos {
         null
     }
 
-    // Borra el archivo si fue tomado por la app (las fotos incluidas "res:" no se borran)
+    // Borra el archivo si fue tomado por la app (las fotos incluidas "res:" no se borran,
+    // y las del servidor "/fotos/..." las borra la API)
     fun borrar(foto: String?) {
-        if (foto == null || foto.startsWith(PREFIJO_RECURSO)) return
+        if (foto == null || !esArchivoLocal(foto)) return
         runCatching { File(foto).delete() }
     }
 
@@ -45,6 +53,8 @@ object Fotos {
             val nombre = foto.removePrefix(PREFIJO_RECURSO)
             context.resources.getIdentifier(nombre, "drawable", context.packageName).takeIf { it != 0 }
         }
+        // Foto subida al servidor: Coil la descarga de la API
+        foto.startsWith(PREFIJO_SERVIDOR) -> Configuracion.URL_SERVIDOR.trimEnd('/') + foto
         else -> File(foto)
     }
 

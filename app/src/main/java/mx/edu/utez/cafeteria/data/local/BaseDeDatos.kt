@@ -16,15 +16,40 @@ import androidx.room.Relation
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.Transaction
-import androidx.room.Update
+import androidx.room.TypeConverter
+import androidx.room.TypeConverters
 import kotlinx.coroutines.flow.Flow
 import mx.edu.utez.cafeteria.data.Categoria
 import mx.edu.utez.cafeteria.data.EstadoPedido
+import mx.edu.utez.cafeteria.data.Opcion
 import mx.edu.utez.cafeteria.data.Producto
+import mx.edu.utez.cafeteria.data.Rol
+
+/*
+ * Room guarda en el teléfono una COPIA (caché) de lo que manda la API.
+ * Las pantallas leen de aquí (Flow): así se ven al instante y siguen mostrando lo último
+ * aunque el servidor no responda un momento. Quien manda es el servidor.
+ */
+
+// ---------------- Tabla de usuarios ----------------
+
+@Entity(
+    tableName = "usuarios",
+    indices = [Index(value = ["matricula"], unique = true), Index(value = ["correo"], unique = true)]
+)
+data class UsuarioEntity(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val nombre: String,
+    val matricula: String, // encargados usan su correo aquí también
+    val correo: String,
+    // La contraseña ya no se guarda en el teléfono: la revisa el servidor (como SHA-256)
+    val rol: Rol,
+    val cafeteriaId: String? = null
+)
 
 // ---------------- Tablas de pedidos ----------------
 
-@Entity(tableName = "pedidos")
+@Entity(tableName = "pedidos", indices = [Index("cafeteriaId")])
 data class PedidoEntity(
     @PrimaryKey(autoGenerate = true) val numero: Int = 0,
     val clienteNombre: String,
@@ -53,6 +78,8 @@ data class LineaEntity(
     val pedidoNumero: Int,
     val productoId: Int,
     val nombre: String,
+    val opcion: String? = null,
+    val nota: String? = null,
     val precio: Int,
     val cantidad: Int,
     val foto: String?,
@@ -66,30 +93,61 @@ data class PedidoConLineas(
     val lineas: List<LineaEntity>
 )
 
+// ---------------- Convertidor: lista de opciones <-> texto ----------------
+
+class Convertidores {
+    private val separadorOpcion = "\u001E"
+    private val separadorCampo = "\u001F"
+
+    @TypeConverter
+    fun opcionesATexto(opciones: List<Opcion>): String =
+        opciones.joinToString(separadorOpcion) { listOf(it.nombre, it.detalle, it.extra.toString()).joinToString(separadorCampo) }
+
+    @TypeConverter
+    fun textoAOpciones(texto: String): List<Opcion> =
+        if (texto.isBlank()) emptyList()
+        else texto.split(separadorOpcion).map { fila ->
+            val campos = fila.split(separadorCampo)
+            Opcion(campos.getOrElse(0) { "" }, campos.getOrElse(1) { "" }, campos.getOrNull(2)?.toIntOrNull() ?: 0)
+        }
+}
+
 // ---------------- DAOs ----------------
 
 @Dao
-interface ProductoDao {
-    @Query("SELECT * FROM productos ORDER BY categoria, nombre")
-    fun observarTodos(): Flow<List<Producto>>
+interface UsuarioDao {
+    @Query("SELECT * FROM usuarios WHERE id = :id")
+    fun observar(id: Int): Flow<UsuarioEntity?>
 
-    @Query("SELECT COUNT(*) FROM productos")
-    suspend fun contar(): Int
+    // Guarda (o reemplaza) al usuario que regresó el servidor al iniciar sesión
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun guardar(usuario: UsuarioEntity)
+}
+
+@Dao
+abstract class ProductoDao {
+    @Query("SELECT * FROM productos ORDER BY categoria, dia, nombre")
+    abstract fun observarTodos(): Flow<List<Producto>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertarTodos(productos: List<Producto>)
+    abstract suspend fun insertarTodos(productos: List<Producto>)
 
-    @Insert
-    suspend fun insertar(producto: Producto): Long
-
-    @Update
-    suspend fun actualizar(producto: Producto)
+    // Inserta o reemplaza un platillo con el id que le dio el servidor
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun guardar(producto: Producto)
 
     @Delete
-    suspend fun borrar(producto: Producto)
+    abstract suspend fun borrar(producto: Producto)
 
-    @Query("UPDATE productos SET disponible = :disponible WHERE id = :id")
-    suspend fun cambiarDisponible(id: Int, disponible: Boolean)
+    @Query("DELETE FROM productos")
+    abstract suspend fun borrarTodos()
+
+    // Cambia la copia local por lo que mandó el servidor: o se cambia todo o nada
+    @Transaction
+    open suspend fun reemplazarTodos(productos: List<Producto>) {
+        borrarTodos()
+        insertarTodos(productos)
+    }
 }
 
 @Dao
@@ -98,35 +156,52 @@ abstract class PedidoDao {
     @Query("SELECT * FROM pedidos ORDER BY numero DESC")
     abstract fun observarTodos(): Flow<List<PedidoConLineas>>
 
-    @Insert
-    abstract suspend fun insertarPedido(pedido: PedidoEntity): Long
+    // REPLACE: si el pedido ya estaba (mismo número), se actualiza
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun insertarPedido(pedido: PedidoEntity)
 
     @Insert
     abstract suspend fun insertarLineas(lineas: List<LineaEntity>)
 
-    @Query("SELECT * FROM pedidos WHERE numero = :numero")
-    abstract suspend fun obtener(numero: Int): PedidoEntity?
+    @Query("DELETE FROM lineas_pedido WHERE pedidoNumero = :numero")
+    abstract suspend fun borrarLineas(numero: Int)
 
-    @Update
-    abstract suspend fun actualizar(pedido: PedidoEntity)
+    @Query("DELETE FROM lineas_pedido")
+    abstract suspend fun borrarTodasLasLineas()
+
+    @Query("DELETE FROM pedidos")
+    abstract suspend fun borrarTodos()
 
     // Guarda el pedido y sus platillos juntos: o se guarda todo o nada
     @Transaction
-    open suspend fun crearPedido(pedido: PedidoEntity, lineas: List<LineaEntity>): Int {
-        val numero = insertarPedido(pedido).toInt()
-        insertarLineas(lineas.map { it.copy(pedidoNumero = numero) })
-        return numero
+    open suspend fun guardar(pedido: PedidoEntity, lineas: List<LineaEntity>) {
+        borrarLineas(pedido.numero)
+        insertarPedido(pedido)
+        insertarLineas(lineas.map { it.copy(pedidoNumero = pedido.numero) })
+    }
+
+    // Cambia todos los pedidos locales por los que mandó el servidor
+    @Transaction
+    open suspend fun reemplazarTodos(pedidos: List<Pair<PedidoEntity, List<LineaEntity>>>) {
+        borrarTodasLasLineas()
+        borrarTodos()
+        pedidos.forEach { (pedido, lineas) ->
+            insertarPedido(pedido)
+            insertarLineas(lineas.map { it.copy(pedidoNumero = pedido.numero) })
+        }
     }
 }
 
 // ---------------- Base de datos ----------------
 
 @Database(
-    entities = [Producto::class, PedidoEntity::class, LineaEntity::class],
-    version = 1,
+    entities = [UsuarioEntity::class, Producto::class, PedidoEntity::class, LineaEntity::class],
+    version = 3, // 3: la app ahora es caché de la API (sin contraseñas en el teléfono)
     exportSchema = false
 )
+@TypeConverters(Convertidores::class)
 abstract class AppDatabase : RoomDatabase() {
+    abstract fun usuarioDao(): UsuarioDao
     abstract fun productoDao(): ProductoDao
     abstract fun pedidoDao(): PedidoDao
 
