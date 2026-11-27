@@ -71,11 +71,9 @@ import mx.edu.utez.cafeteria.ui.ubicacion.CandadoUbicacion
 fun CafeteriaApp(viewModel: CafeteriaViewModel = viewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // 1. Candado de GPS (se puede apagar en Configuracion.VALIDAR_UBICACION)
     CandadoUbicacion {
         Box(Modifier.fillMaxSize()) {
             ContenidoApp(state, viewModel)
-            // Avisos del servidor encima de cualquier pantalla
             AvisosServidor(state, viewModel::limpiarMensaje)
         }
     }
@@ -89,26 +87,22 @@ private fun ContenidoApp(state: AppUiState, viewModel: CafeteriaViewModel) {
             CircularProgressIndicator(color = Cafe.Ambar)
         }
 
-        // 2. Sin sesión: pantalla de inicio de sesión (Estudiante / Encargado)
         sesion == null -> LoginScreen(
             onIniciarSesion = viewModel::iniciarSesion,
             onRegistrar = viewModel::registrarAlumno,
             onRestablecer = viewModel::restablecerContrasena
         )
 
-        // 3. Encargado: panel de SU cafetería. key() reinicia las pestañas al cambiar de cuenta
         state.esEncargado -> key(sesion.id) {
             PanelEncargado(state, viewModel)
         }
 
-        // 4. Alumno: elige cafetería y pide
         else -> key(sesion.id) {
             FlujoAlumno(state, viewModel)
         }
     }
 }
 
-// Arriba: franja roja si no hay conexión con la API. Abajo: mensajes (pedido enviado, errores...)
 @Composable
 private fun AvisosServidor(state: AppUiState, onCerrarMensaje: () -> Unit) {
     Box(Modifier.fillMaxSize()) {
@@ -128,7 +122,6 @@ private fun AvisosServidor(state: AppUiState, onCerrarMensaje: () -> Unit) {
             )
         }
         state.mensaje?.let { mensaje ->
-            // Se quita solo a los 3.5 segundos (o al tocarlo)
             LaunchedEffect(mensaje) {
                 delay(3500)
                 onCerrarMensaje()
@@ -153,8 +146,6 @@ private fun AvisosServidor(state: AppUiState, onCerrarMensaje: () -> Unit) {
         }
     }
 }
-
-// ---------------- Alumno ----------------
 
 @Composable
 private fun FlujoAlumno(state: AppUiState, viewModel: CafeteriaViewModel) {
@@ -198,7 +189,6 @@ private fun AppAlumno(
         if (verCarrito) verCarrito = false else tab = TAB_MENU
     }
 
-    // Hoja de detalle del platillo (se abre al tocar cualquier platillo)
     state.detalle?.let { producto ->
         DetallePlatilloSheet(
             producto = producto,
@@ -291,19 +281,16 @@ private fun AppAlumno(
     }
 }
 
-// ---------------- Encargado ----------------
-
 private const val TAB_COMANDAS = 0
 private const val TAB_ENTREGADOS = 1
 private const val TAB_STOCK = 2
 private const val TAB_SEDE = 3
 
-private const val PLATILLO_NUEVO = -1 // valor especial: abrir el formulario vacío
+private const val PLATILLO_NUEVO = -1
 
 @Composable
 private fun PanelEncargado(state: AppUiState, viewModel: CafeteriaViewModel) {
     var tab by rememberSaveable { mutableIntStateOf(TAB_COMANDAS) }
-    // null = no se está editando; -1 = platillo nuevo; otro número = id del platillo a editar
     var editandoId by rememberSaveable { mutableStateOf<Int?>(null) }
 
     BackHandler(enabled = editandoId == null && tab != TAB_COMANDAS) { tab = TAB_COMANDAS }

@@ -156,7 +156,6 @@ fun CarritoScreen(
     }
 }
 
-// Un renglón del carrito: platillo, opción, nota, precio y +/-
 @Composable
 private fun FilaCarrito(producto: Producto, item: ItemCarrito, onSumar: () -> Unit, onRestar: () -> Unit) {
     Surface(color = Cafe.TarjetaClara, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {

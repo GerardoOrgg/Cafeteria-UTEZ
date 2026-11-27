@@ -63,10 +63,6 @@ private sealed interface EstadoUbicacion {
     data object Dentro : EstadoUbicacion
 }
 
-/**
- * Solo deja ver [contenido] si el teléfono está dentro del radio de la UTEZ.
- * Se vuelve a revisar cada vez que la app regresa al frente.
- */
 @Composable
 fun CandadoUbicacion(contenido: @Composable () -> Unit) {
     if (!Configuracion.VALIDAR_UBICACION) {
@@ -85,7 +81,6 @@ fun CandadoUbicacion(contenido: @Composable () -> Unit) {
         if (resultado.values.any { it }) revision++ else estado = EstadoUbicacion.SinPermiso
     }
 
-    // Cada vez que la app vuelve al frente (por ejemplo, después de prender el GPS)
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { revision++ }
 
     LaunchedEffect(revision) {
@@ -102,7 +97,6 @@ fun CandadoUbicacion(contenido: @Composable () -> Unit) {
             estado = EstadoUbicacion.GpsApagado
             return@LaunchedEffect
         }
-        // Si ya estaba dentro, no se tapa la app mientras se vuelve a revisar
         if (estado != EstadoUbicacion.Dentro) estado = EstadoUbicacion.Verificando
 
         val ubicacion = obtenerUbicacion(context)
@@ -215,7 +209,6 @@ private fun gpsEncendido(context: Context): Boolean {
     return lm.isLocationEnabled
 }
 
-// Pide la ubicación actual (máximo 15 segundos); si no llega, usa la última conocida
 @SuppressLint("MissingPermission")
 private suspend fun obtenerUbicacion(context: Context): Location? = try {
     val cliente = LocationServices.getFusedLocationProviderClient(context)

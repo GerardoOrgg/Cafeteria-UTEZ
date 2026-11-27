@@ -77,10 +77,6 @@ import mx.edu.utez.cafeteria.ui.components.coloresCampo
 import mx.edu.utez.cafeteria.ui.theme.Cafe
 import java.io.File
 
-/**
- * Formulario para crear (original == null) o editar un platillo.
- * onGuardar recibe el platillo listo y la foto que tenía antes (para borrar el archivo viejo).
- */
 @Composable
 fun EditarPlatilloScreen(
     original: Producto?,
@@ -103,19 +99,16 @@ fun EditarPlatilloScreen(
     var prepMax by rememberSaveable { mutableStateOf((original?.prepMax ?: 10).toString()) }
     var grupo by rememberSaveable { mutableStateOf(original?.grupoOpciones ?: "") }
     var recomendacion by rememberSaveable { mutableStateOf(original?.recomendacion ?: "") }
-    // Opciones: nombre, detalle y precio extra (texto para poder editarlo)
     val opciones = remember { mutableStateListOf<OpcionEditable>().apply { original?.opciones?.forEach { add(OpcionEditable(it.nombre, it.detalle, it.extra.toString())) } } }
     var archivoPendiente by rememberSaveable { mutableStateOf<String?>(null) }
     var intentoGuardar by rememberSaveable { mutableStateOf(false) }
     var aviso by rememberSaveable { mutableStateOf<String?>(null) }
 
-    // Cambiar de foto: si la anterior la tomó este formulario, se borra
     fun ponerFoto(nueva: String?) {
         if (foto != original?.foto) Fotos.borrar(foto)
         foto = nueva
     }
 
-    // ---------- Cámara ----------
     val camara = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
         val ruta = archivoPendiente
         if (ok && ruta != null) ponerFoto(ruta) else ruta?.let { File(it).delete() }
@@ -132,7 +125,6 @@ fun EditarPlatilloScreen(
         if (concedido) abrirCamara() else aviso = "Sin permiso de cámara no se puede tomar la foto. Puedes elegir una de la galería."
     }
 
-    // ---------- Galería ----------
     val galeria = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
             scope.launch {
@@ -142,7 +134,6 @@ fun EditarPlatilloScreen(
         }
     }
 
-    // ---------- Validación ----------
     val precioNumero = precio.toIntOrNull()
     val errorNombre = if (nombre.isBlank()) "Escribe el nombre del platillo" else null
     val errorPrecio = when {
@@ -185,7 +176,6 @@ fun EditarPlatilloScreen(
     }
 
     val cancelar: () -> Unit = {
-        // Si se tomó una foto nueva y no se guardó, se borra el archivo
         if (foto != original?.foto) Fotos.borrar(foto)
         onCancelar()
     }
@@ -202,7 +192,6 @@ fun EditarPlatilloScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Foto
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     EtiquetaSeccion("Foto")
@@ -240,7 +229,6 @@ fun EditarPlatilloScreen(
                 }
             }
 
-            // Datos
             item {
                 OutlinedTextField(
                     value = nombre,
@@ -285,7 +273,6 @@ fun EditarPlatilloScreen(
                 )
             }
 
-            // Categoría
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     EtiquetaSeccion("Categoría")
@@ -300,7 +287,6 @@ fun EditarPlatilloScreen(
                 }
             }
 
-            // Día del especial
             if (categoria == Categoria.ESPECIAL) {
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -315,7 +301,6 @@ fun EditarPlatilloScreen(
                 }
             }
 
-            // Descripción larga (hoja de detalle)
             item {
                 OutlinedTextField(
                     value = detalle,
@@ -330,7 +315,6 @@ fun EditarPlatilloScreen(
                 )
             }
 
-            // Tiempo de preparación
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     EtiquetaSeccion("Tiempo de preparación (minutos)")
@@ -351,7 +335,6 @@ fun EditarPlatilloScreen(
                 }
             }
 
-            // Opciones (ej. Tipo de milanesa: Pollo / Cerdo)
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     EtiquetaSeccion("Opciones (el alumno elige una)")
@@ -409,7 +392,6 @@ fun EditarPlatilloScreen(
                 }
             }
 
-            // Etiqueta
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     EtiquetaSeccion("Etiqueta en la foto (opcional)")
@@ -425,7 +407,6 @@ fun EditarPlatilloScreen(
                 }
             }
 
-            // Disponible
             item {
                 Surface(color = Cafe.Tarjeta, shape = RoundedCornerShape(14.dp)) {
                     Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -488,5 +469,4 @@ private fun BotonSecundario(texto: String, icono: androidx.compose.ui.graphics.v
     }
 }
 
-// Una opción mientras se edita (el extra es texto para poder borrarlo y escribirlo)
 private data class OpcionEditable(val nombre: String, val detalle: String, val extra: String)

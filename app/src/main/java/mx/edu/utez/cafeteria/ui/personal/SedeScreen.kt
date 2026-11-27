@@ -47,7 +47,6 @@ import mx.edu.utez.cafeteria.ui.components.Tarjeta
 import mx.edu.utez.cafeteria.ui.theme.Cafe
 import mx.edu.utez.cafeteria.ui.theme.CafeteriaTheme
 
-// Pestaña "Cafetería" del encargado: su sede, tiempo de espera y cerrar sesión
 @Composable
 fun SedeScreen(
     state: AppUiState,

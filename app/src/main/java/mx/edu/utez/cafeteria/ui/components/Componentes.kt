@@ -69,8 +69,6 @@ import mx.edu.utez.cafeteria.data.EstadoPedido
 import mx.edu.utez.cafeteria.data.Fotos
 import mx.edu.utez.cafeteria.ui.theme.Cafe
 
-// ---------- Barras ----------
-
 @Composable
 fun LogoApp(titulo: String = "Cafetería UTEZ") {
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -188,8 +186,6 @@ fun BarraNavegacion(items: List<ItemNav>, seleccionado: Int, onSeleccionar: (Int
         }
     }
 }
-
-// ---------- Bloques ----------
 
 @Composable
 fun Tarjeta(
@@ -338,7 +334,6 @@ fun Contador(cantidad: Int, onMas: () -> Unit, onMenos: () -> Unit, tamano: Dp =
     }
 }
 
-// Foto del platillo: la de la cámara, la incluida en la app o el ícono de su categoría
 @Composable
 fun FotoPlatillo(foto: String?, categoria: Categoria, modifier: Modifier = Modifier, tamanoIcono: Dp = 32.dp) {
     val context = LocalContext.current
@@ -369,8 +364,6 @@ fun Miniatura(foto: String?, categoria: Categoria, tamano: Dp = 44.dp) {
     )
 }
 
-// Fila de platillo: especial del día, búsqueda y categorías. Tocarla abre la hoja de detalle.
-// motivo != null significa que no se puede pedir (agotado, o especial de otro día)
 @Composable
 fun FilaProducto(
     producto: Producto,
@@ -492,13 +485,11 @@ fun EstadoVacio(icono: ImageVector, titulo: String, mensaje: String, accion: (@C
     }
 }
 
-// Espacio para que el contenido no quede bajo la barra de navegación del sistema
 @Composable
 fun EspacioInferior() {
     Spacer(Modifier.navigationBarsPadding())
 }
 
-// Colores de los campos de texto en tema oscuro
 @Composable
 fun coloresCampo(): TextFieldColors = OutlinedTextFieldDefaults.colors(
     focusedContainerColor = Cafe.Tarjeta,

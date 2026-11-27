@@ -81,7 +81,6 @@ fun CategoriasScreen(
                 item { EstadoVacio(Icons.Default.NoFood, "Sin platillos aquí", "${state.cafeteria.nombreCorto} no tiene platillos en esta categoría.") }
             }
             if (state.categoria == Categoria.ESPECIAL) {
-                // Especiales agrupados por día; solo los de hoy se pueden pedir
                 (1..5).forEach { dia ->
                     val delDia = productos.filter { it.dia == dia }
                     if (delDia.isNotEmpty()) {

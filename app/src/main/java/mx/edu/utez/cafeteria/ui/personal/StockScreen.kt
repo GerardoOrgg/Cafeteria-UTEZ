@@ -52,7 +52,6 @@ import mx.edu.utez.cafeteria.ui.components.EtiquetaSeccion
 import mx.edu.utez.cafeteria.ui.components.Miniatura
 import mx.edu.utez.cafeteria.ui.theme.Cafe
 
-// Pestaña "Menú & Stock": lista de platillos con disponible/agotado, editar y borrar
 @Composable
 fun StockScreen(
     state: AppUiState,

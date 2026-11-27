@@ -30,20 +30,18 @@ import mx.edu.utez.cafeteria.data.Sesion
 import mx.edu.utez.cafeteria.data.TiempoEspera
 import mx.edu.utez.cafeteria.data.remoto.ClienteApi
 
-// Lo que solo vive mientras la app está abierta (no se guarda)
 private data class EstadoLocal(
     val busqueda: String = "",
     val categoria: Categoria = Categoria.DIARIO,
     val carrito: List<ItemCarrito> = emptyList(),
     val nota: String = "",
-    val sugerenciaId: Int? = null, // platillo sugerido al agitar el teléfono
-    val detalleId: Int? = null, // platillo abierto en la hoja de detalle
-    val conectado: Boolean = true, // false = la última vez no se pudo hablar con el servidor
-    val mensaje: String? = null, // aviso para mostrar abajo (ej. error del servidor)
-    val enviando: Boolean = false // se está mandando el pedido al servidor
+    val sugerenciaId: Int? = null,
+    val detalleId: Int? = null,
+    val conectado: Boolean = true,
+    val mensaje: String? = null,
+    val enviando: Boolean = false
 )
 
-// Todo lo que necesitan las pantallas, en un solo objeto
 data class AppUiState(
     val cargando: Boolean = true,
     val sesion: Sesion? = null,
@@ -63,14 +61,12 @@ data class AppUiState(
 ) {
     val esEncargado: Boolean get() = sesion?.rol == Rol.ENCARGADO
 
-    // Encargado: su cafetería. Alumno: la que eligió.
     val cafeteria: Cafeteria get() = Cafeterias.porId(if (esEncargado) sesion?.cafeteriaId else cafeteriaElegida)
 
     val tiempoEspera: TiempoEspera get() = tiempos[cafeteria.id] ?: TiempoEspera.MEDIO
 
     val hoy: Int get() = Dias.hoy()
 
-    // Menú de la cafetería actual (cada cafetería tiene el suyo)
     val menu: List<Producto> get() = productos.filter { it.cafeteriaId == cafeteria.id }
 
     fun productosDe(categoria: Categoria): List<Producto> = menu.filter { it.categoria == categoria }
@@ -78,7 +74,6 @@ data class AppUiState(
     val especialesDeHoy: List<Producto>
         get() = menu.filter { it.categoria == Categoria.ESPECIAL && it.dia == hoy }
 
-    // null = se puede pedir; si no, el motivo que se muestra
     fun motivoNoPedible(p: Producto): String? = when {
         !p.disponible -> "Agotado temporalmente"
         p.categoria == Categoria.ESPECIAL && p.dia != hoy -> "Solo el ${Dias.nombre(p.dia ?: 0).lowercase()}"
@@ -87,7 +82,6 @@ data class AppUiState(
 
     fun cantidadDe(productoId: Int): Int = carrito.filter { it.productoId == productoId }.sumOf { it.cantidad }
 
-    // Renglones del carrito con su platillo (solo los que siguen existiendo y se pueden pedir)
     val lineasCarrito: List<Pair<Producto, ItemCarrito>>
         get() = carrito.mapNotNull { item ->
             menu.find { it.id == item.productoId && motivoNoPedible(it) == null }?.let { it to item }
@@ -102,7 +96,6 @@ data class AppUiState(
     val misPedidos: List<Pedido>
         get() = pedidos.filter { it.cliente.matricula == sesion?.matricula }
 
-    // Panel del encargado: solo pedidos de SU cafetería
     val comandasActivas: List<Pedido>
         get() = pedidos.filter { it.cafeteriaId == cafeteria.id && it.estado.activo }.sortedBy { it.numero }
 
@@ -111,13 +104,11 @@ data class AppUiState(
 }
 
 class CafeteriaViewModel(app: Application) : AndroidViewModel(app) {
-
     private val repo = Repositorio(app)
     private val local = MutableStateFlow(EstadoLocal())
 
     private data class Guardado(val ajustes: Ajustes, val sesion: Sesion?)
 
-    // Junta los datos guardados (Room + DataStore) con el estado local
     val uiState: StateFlow<AppUiState> =
         combine(
             repo.productos,
@@ -145,8 +136,6 @@ class CafeteriaViewModel(app: Application) : AndroidViewModel(app) {
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AppUiState())
 
     init {
-        // Cada pocos segundos le pide a la API lo nuevo (pedidos, menú, tiempos) y lo guarda en Room.
-        // collectLatest: si cambia la sesión (otra cuenta), se cancela el ciclo anterior y empieza otro.
         viewModelScope.launch {
             repo.sesion.collectLatest { sesion ->
                 while (true) {
@@ -158,7 +147,6 @@ class CafeteriaViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    // Corre una acción contra la API; si falla, muestra el mensaje en pantalla en vez de cerrar la app
     private fun ejecutar(alFallar: () -> Unit = {}, accion: suspend () -> Unit) {
         viewModelScope.launch {
             try {
@@ -173,8 +161,6 @@ class CafeteriaViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun limpiarMensaje() = local.update { it.copy(mensaje = null) }
-
-    // ---------------- Sesión ----------------
 
     fun iniciarSesion(usuario: String, contrasena: String, rol: Rol, alTerminar: (ResultadoAuth) -> Unit) {
         viewModelScope.launch { alTerminar(repo.iniciarSesion(usuario, contrasena, rol)) }
@@ -193,10 +179,7 @@ class CafeteriaViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { repo.cerrarSesion() }
     }
 
-    // ---------------- Alumno ----------------
-
     fun elegirCafeteria(id: String) {
-        // Cada cafetería tiene su menú: al cambiar se vacía el carrito
         if (id != uiState.value.cafeteriaElegida) local.update { it.copy(carrito = emptyList(), busqueda = "") }
         viewModelScope.launch { repo.guardarCafeteria(id) }
     }
@@ -209,7 +192,6 @@ class CafeteriaViewModel(app: Application) : AndroidViewModel(app) {
 
     fun cerrarDetalle() = local.update { it.copy(detalleId = null) }
 
-    // Botón "+" de las tarjetas: si el platillo tiene opciones, abre la hoja para elegir
     fun agregarRapido(productoId: Int) {
         val s = uiState.value
         val p = s.menu.find { it.id == productoId } ?: return
@@ -222,13 +204,11 @@ class CafeteriaViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    // Botón "−" de las tarjetas: quita una pieza del último renglón de ese platillo
     fun quitarUno(productoId: Int) {
         val ultimo = uiState.value.carrito.lastOrNull { it.productoId == productoId } ?: return
         restar(ultimo.clave)
     }
 
-    // Desde la hoja de detalle: si ya hay uno igual (misma opción y nota), suma las piezas
     fun agregarItem(item: ItemCarrito) {
         local.update { l ->
             val existente = l.carrito.find { it.clave == item.clave }
@@ -253,7 +233,6 @@ class CafeteriaViewModel(app: Application) : AndroidViewModel(app) {
 
     fun cambiarNota(nota: String) = local.update { it.copy(nota = nota) }
 
-    // Si el servidor rechaza el pedido (sin conexión, platillo agotado...) el carrito se queda igual
     fun confirmarPedido() {
         val s = uiState.value
         val sesion = s.sesion ?: return
@@ -266,7 +245,6 @@ class CafeteriaViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    // Copia un pedido anterior al carrito (si el pedido fue en otra cafetería, cambia a esa)
     fun pedirDeNuevo(pedido: Pedido) {
         val s = uiState.value
         if (pedido.cafeteriaId != s.cafeteria.id) elegirCafeteria(pedido.cafeteriaId)
@@ -286,7 +264,6 @@ class CafeteriaViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    // Acelerómetro: al agitar, sugiere un platillo que se pueda pedir hoy
     fun sugerirPlatillo() {
         val s = uiState.value
         if (s.detalleId != null) return
@@ -296,8 +273,6 @@ class CafeteriaViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun cerrarSugerencia() = local.update { it.copy(sugerenciaId = null) }
-
-    // ---------------- Encargado ----------------
 
     fun avanzarComanda(numero: Int) {
         ejecutar { repo.avanzarPedido(numero) }
@@ -311,8 +286,6 @@ class CafeteriaViewModel(app: Application) : AndroidViewModel(app) {
         ejecutar { repo.cambiarDisponible(id, disponible) }
     }
 
-    // El platillo siempre se guarda en la cafetería del encargado
-    // fotoAnterior: la foto que tenía antes de editar, para borrar el archivo si se cambió
     fun guardarPlatillo(producto: Producto, fotoAnterior: String?) {
         val cafeteriaId = uiState.value.sesion?.cafeteriaId ?: return
         ejecutar {

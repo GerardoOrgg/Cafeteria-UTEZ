@@ -66,11 +66,6 @@ import mx.edu.utez.cafeteria.ui.components.FotoPlatillo
 import mx.edu.utez.cafeteria.ui.components.coloresCampo
 import mx.edu.utez.cafeteria.ui.theme.Cafe
 
-/**
- * Hoja que sube desde abajo al tocar un platillo:
- * foto, descripción, tiempo de preparación, opción obligatoria, piezas y notas.
- * motivo != null = no se puede pedir (agotado o especial de otro día).
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetallePlatilloSheet(
@@ -102,7 +97,6 @@ fun DetallePlatilloSheet(
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                // Foto con insignia y botón de cerrar
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -133,7 +127,6 @@ fun DetallePlatilloSheet(
                     }
                 }
 
-                // Nombre y precio
                 Row(verticalAlignment = Alignment.Top) {
                     Text(
                         producto.nombre,
@@ -171,7 +164,6 @@ fun DetallePlatilloSheet(
                     }
                 }
 
-                // Opción obligatoria (ej. Tipo de milanesa)
                 if (producto.opciones.isNotEmpty()) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(producto.grupoOpciones ?: "Elige una opción", color = Cafe.Texto, style = MaterialTheme.typography.titleMedium)
@@ -207,7 +199,6 @@ fun DetallePlatilloSheet(
                     }
                 }
 
-                // Número de piezas
                 Surface(color = Cafe.Tarjeta, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
                     Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
@@ -229,7 +220,6 @@ fun DetallePlatilloSheet(
                     }
                 }
 
-                // Notas para cocina
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.AutoMirrored.Filled.Notes, contentDescription = null, tint = Cafe.Texto, modifier = Modifier.size(18.dp))
                     Text("  Notas adicionales para cocina", color = Cafe.Texto, style = MaterialTheme.typography.titleMedium)
@@ -253,7 +243,6 @@ fun DetallePlatilloSheet(
                 Spacer(Modifier.height(4.dp))
             }
 
-            // Botón fijo abajo
             Button(
                 onClick = {
                     onAgregar(ItemCarrito(producto.id, opcion?.nombre, opcion?.extra ?: 0, nota.trim(), piezas))

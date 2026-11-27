@@ -6,7 +6,6 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-// Paleta de las vistas: azul marino oscuro con acentos ámbar
 object Cafe {
     val Fondo = Color(0xFF0B1324)
     val Barra = Color(0xFF101A2E)

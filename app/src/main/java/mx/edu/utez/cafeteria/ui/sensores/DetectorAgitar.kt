@@ -13,10 +13,6 @@ import androidx.compose.ui.platform.LocalContext
 import mx.edu.utez.cafeteria.config.Configuracion
 import kotlin.math.sqrt
 
-/**
- * Escucha el acelerómetro mientras la pantalla que lo usa está visible
- * y llama a [onAgitar] cuando el teléfono se agita con fuerza.
- */
 @Composable
 fun DetectorAgitar(onAgitar: () -> Unit) {
     val context = LocalContext.current
@@ -30,7 +26,6 @@ fun DetectorAgitar(onAgitar: () -> Unit) {
         val listener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent?) {
                 val v = event?.values ?: return
-                // Cada eje en unidades G (en reposo la fuerza total vale 1)
                 val gX = v[0] / SensorManager.GRAVITY_EARTH
                 val gY = v[1] / SensorManager.GRAVITY_EARTH
                 val gZ = v[2] / SensorManager.GRAVITY_EARTH
@@ -48,10 +43,8 @@ fun DetectorAgitar(onAgitar: () -> Unit) {
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
         }
 
-        // Algunos equipos no tienen acelerómetro: en ese caso no se registra nada
         acelerometro?.let { sensorManager.registerListener(listener, it, SensorManager.SENSOR_DELAY_UI) }
 
-        // Al salir de la pantalla se libera el sensor (si no, sigue gastando batería)
         onDispose { sensorManager.unregisterListener(listener) }
     }
 }

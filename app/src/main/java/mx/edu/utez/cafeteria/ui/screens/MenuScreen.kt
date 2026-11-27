@@ -70,7 +70,6 @@ fun MenuScreen(
     onAgitar: () -> Unit,
     onCerrarSugerencia: () -> Unit
 ) {
-    // Acelerómetro: agita el teléfono para que la app te sugiera un platillo
     DetectorAgitar(onAgitar = onAgitar)
 
     state.sugerencia?.let { sugerido ->
@@ -155,7 +154,6 @@ fun MenuScreen(
                         }
                     }
                 }
-                // Especial del día: solo en cafeterías que tienen especiales (Nido de Halcón)
                 if (state.productosDe(Categoria.ESPECIAL).isNotEmpty()) {
                     item { TarjetaEspecial(state, onAbrir, onAgregar, onQuitar, onVerCategoria) }
                 }

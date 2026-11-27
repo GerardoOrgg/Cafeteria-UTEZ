@@ -125,7 +125,6 @@ fun LoginScreen(
         ) {
             Chip("NIDO DE HALCÓN • EL BALCÓN", Cafe.Tarjeta, Cafe.AmbarTexto, icono = Icons.Default.Restaurant)
 
-            // Logo
             Box(contentAlignment = Alignment.BottomEnd) {
                 Box(
                     modifier = Modifier
@@ -158,7 +157,6 @@ fun LoginScreen(
                 textAlign = TextAlign.Center
             )
 
-            // Estudiante / Encargado
             if (!registrando) {
                 Surface(color = Cafe.Tarjeta, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
                     Row(modifier = Modifier.padding(4.dp)) {
@@ -172,7 +170,6 @@ fun LoginScreen(
                 }
             }
 
-            // Formulario
             Surface(color = Cafe.Tarjeta, shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     if (registrando) {
