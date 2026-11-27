@@ -10,19 +10,13 @@ import jakarta.validation.constraints.Size;
 
 import java.util.List;
 
-/**
- * Lo que la app MANDA a la API (cuerpo JSON de POST, PUT y PATCH).
- * Son "records": clases de solo datos, Java les crea constructor y getters.
- */
 public final class Peticiones {
-
     private Peticiones() {
     }
 
     public record LoginRequest(
             @NotBlank(message = "Escribe tu matrícula o correo.") String usuario,
             @NotBlank(message = "Escribe tu contraseña.") String contrasena,
-            // "ALUMNO" o "ENCARGADO": la pestaña que eligió en la app
             @NotBlank(message = "Falta el tipo de cuenta.") String rol
     ) {
     }
@@ -44,7 +38,6 @@ public final class Peticiones {
     public record DisponibleRequest(@NotNull(message = "Falta indicar si está disponible.") Boolean disponible) {
     }
 
-    // Un renglón del carrito. El precio NO se manda: lo calcula el servidor con los precios de la base
     public record ItemPedidoRequest(
             @NotNull(message = "Falta el platillo.") Integer productoId,
             String opcion,
@@ -64,7 +57,6 @@ public final class Peticiones {
     public record CancelarRequest(String motivo) {
     }
 
-    // "BAJO", "MEDIO" o "ALTO"
     public record TiempoRequest(@NotBlank(message = "Falta el tiempo de espera.") String tiempo) {
     }
 }

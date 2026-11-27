@@ -3,18 +3,14 @@ package mx.edu.utez.cafeteriaapi.model;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 
-// Una opción de un platillo. Ej. "Pollo empanizado", "Pechuga suave, dorada en freidora", extra = 0
-// @Embeddable: no tiene tabla propia con id, se guarda en "producto_opciones" junto al platillo
 @Embeddable
 public class Opcion {
-
     @Column(nullable = false, length = 80)
     private String nombre;
 
     @Column(length = 200)
     private String detalle = "";
 
-    // Pesos que se suman al precio del platillo
     private int extra;
 
     public Opcion() {

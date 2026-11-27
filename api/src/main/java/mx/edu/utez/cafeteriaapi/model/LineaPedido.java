@@ -5,10 +5,8 @@ import jakarta.persistence.Embeddable;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 
-// Copia del platillo dentro de un pedido (si luego se edita o borra el platillo, el pedido no cambia)
 @Embeddable
 public class LineaPedido {
-
     private Integer productoId;
 
     @Column(nullable = false, length = 100)
@@ -20,7 +18,6 @@ public class LineaPedido {
     @Column(length = 120)
     private String nota;
 
-    // Precio por pieza, ya con el extra de la opción
     private int precio;
 
     private int cantidad;

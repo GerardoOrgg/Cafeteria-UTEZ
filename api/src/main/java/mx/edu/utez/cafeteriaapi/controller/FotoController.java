@@ -13,14 +13,9 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-/**
- * POST /api/fotos (multipart, campo "archivo") -> sube la foto de un platillo y regresa su ruta.
- * Después la foto se ve en http://IP:8080/fotos/nombre.jpg (ver WebConfig).
- */
 @RestController
 @RequestMapping("/api/fotos")
 public class FotoController {
-
     private final FotoService fotos;
     private final AuthService auth;
 

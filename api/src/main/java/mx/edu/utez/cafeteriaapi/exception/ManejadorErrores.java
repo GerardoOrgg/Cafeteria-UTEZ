@@ -13,13 +13,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
-/**
- * Convierte cualquier error en un JSON {"mensaje": "..."} con su código HTTP.
- * Así la API nunca regresa una página de error y la app siempre puede mostrar algo entendible.
- */
 @RestControllerAdvice
 public class ManejadorErrores {
-
     private static final Logger log = LoggerFactory.getLogger(ManejadorErrores.class);
 
     @ExceptionHandler(ApiException.class)
@@ -27,7 +22,6 @@ public class ManejadorErrores {
         return ResponseEntity.status(e.getEstado()).body(new MensajeDto(e.getMessage()));
     }
 
-    // Falló una validación (@NotBlank, @Min...): se regresa el primer mensaje
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<MensajeDto> validacion(MethodArgumentNotValidException e) {
         String mensaje = e.getBindingResult().getFieldErrors().stream()
@@ -52,7 +46,6 @@ public class ManejadorErrores {
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(new MensajeDto("La foto es demasiado grande (máximo 15 MB)."));
     }
 
-    // Cualquier otra cosa: se registra en la consola del servidor y se responde 500
     @ExceptionHandler(Exception.class)
     public ResponseEntity<MensajeDto> inesperado(Exception e) {
         log.error("Error inesperado", e);

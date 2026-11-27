@@ -32,19 +32,8 @@ import static mx.edu.utez.cafeteriaapi.model.Categoria.ESPECIAL;
 import static mx.edu.utez.cafeteriaapi.model.Categoria.POSTRES;
 import static mx.edu.utez.cafeteriaapi.model.Categoria.SNACKS;
 
-/**
- * Lo que trae la base la primera vez que se arranca el servidor (si las tablas están vacías).
- * Después todo se edita desde el panel del encargado (Menú & Stock).
- * Precios de ejemplo: cámbialos por los reales.
- *
- * Cuentas de prueba:
- *   Alumno:    20213TI045 / 123456
- *   Encargado: nido@utez.edu.mx / nido123      (Nido de Halcón)
- *   Encargado: balcon@utez.edu.mx / balcon123  (El Balcón)
- */
 @Component
 public class DatosIniciales implements CommandLineRunner {
-
     private static final Logger log = LoggerFactory.getLogger(DatosIniciales.class);
 
     private static final String NIDO = "nido";
@@ -93,8 +82,6 @@ public class DatosIniciales implements CommandLineRunner {
         }
     }
 
-    // ---------- Atajos para escribir el menú corto ----------
-
     private static Opcion o(String nombre) {
         return new Opcion(nombre, 0, "");
     }
@@ -107,7 +94,6 @@ public class DatosIniciales implements CommandLineRunner {
         return new Opcion(nombre, 0, detalle);
     }
 
-    // Se crean nuevas cada vez: cada platillo necesita sus propias opciones
     private static Opcion[] tortilla() {
         return new Opcion[]{o("Maíz"), o("Harina", 5)};
     }
@@ -128,11 +114,8 @@ public class DatosIniciales implements CommandLineRunner {
         return new Plato(cafeteria, categoria, nombre, descripcion, precio);
     }
 
-    // ---------- Cafetería Nido de Halcón ----------
-
     private static List<Plato> nido() {
         return List.of(
-                // LUNES: Tacos Acorazados
                 p(NIDO, ESPECIAL, "Taco Acorazado de Milanesa", "Con arroz rojo y frijol de la olla", 55).dia(1)
                         .opciones("Tipo de milanesa",
                                 od("Pollo empanizado", "Pechuga suave, dorada en freidora"),
@@ -152,7 +135,6 @@ public class DatosIniciales implements CommandLineRunner {
                         .opciones("Guisado", o("Milanesa de pollo"), o("Milanesa de cerdo"), o("Huevo"), o("Papa con longaniza"))
                         .detalle("Para cuando no tienes tanta hambre: una tortilla con arroz y el guisado que elijas.").prep(5, 8),
 
-                // MARTES: Tacos de pastor, bistec y barbacoa
                 p(NIDO, ESPECIAL, "Orden de tacos al pastor (5)", "Con piña, cebolla y cilantro", 60).dia(2)
                         .opciones("Tortilla", tortilla()).etiqueta("Favorito").prep(6, 10)
                         .detalle("Cinco tacos de pastor del trompo con piña, cebolla, cilantro y salsas de la casa."),
@@ -168,7 +150,6 @@ public class DatosIniciales implements CommandLineRunner {
                 p(NIDO, ESPECIAL, "Gringa de pastor", "Tortilla de harina con queso y pastor", 45).dia(2).prep(6, 10),
                 p(NIDO, ESPECIAL, "Consomé de barbacoa", "Vaso con garbanzo y arroz", 25).dia(2).prep(2, 4),
 
-                // MIÉRCOLES: Enchiladas, enmoladas y suizas
                 p(NIDO, ESPECIAL, "Enchiladas rojas o verdes (4)", "Con crema, queso y cebolla", 55).dia(3)
                         .opciones("Salsa", o("Verde"), o("Roja")).prep(8, 12)
                         .detalle("Cuatro enchiladas rellenas de pollo bañadas en salsa, con crema, queso y cebolla."),
@@ -181,7 +162,6 @@ public class DatosIniciales implements CommandLineRunner {
                 p(NIDO, ESPECIAL, "Media orden de enchiladas (2)", "Para probar", 35).dia(3)
                         .opciones("Tipo", o("Verdes"), o("Rojas"), o("Enmoladas", 5), o("Suizas", 5)).prep(6, 10),
 
-                // JUEVES: Pozole y antojitos
                 p(NIDO, ESPECIAL, "Pozole chico", "Con lechuga, rábano, orégano y limón", 55).dia(4)
                         .opciones("Tipo de pozole", pozoles()).prep(3, 6)
                         .detalle("Pozole de cerdo con maíz cacahuazintle. Se acompaña con tostadas."),
@@ -193,7 +173,6 @@ public class DatosIniciales implements CommandLineRunner {
                 p(NIDO, ESPECIAL, "Orden de flautas (4)", "Con crema, queso y salsa", 50).dia(4)
                         .opciones("Relleno", o("Pollo"), o("Papa"), o("Res", 5)).prep(8, 12),
 
-                // VIERNES: Hamburguesas
                 p(NIDO, ESPECIAL, "Hamburguesa sencilla", "Res, queso, jitomate y lechuga, con papas", 60).dia(5)
                         .opciones("Acompañamiento", acompanamiento()).etiqueta("Favorito").prep(10, 15)
                         .detalle("Carne de res al carbón, queso amarillo, jitomate, lechuga y cebolla en pan suave."),
@@ -206,7 +185,6 @@ public class DatosIniciales implements CommandLineRunner {
                 p(NIDO, ESPECIAL, "Papas a la francesa", "Con catsup y salsa", 30).dia(5)
                         .opciones("Tamaño", o("Mediana"), o("Grande", 10)).prep(5, 8),
 
-                // DEL DIARIO
                 p(NIDO, DIARIO, "Chilaquiles", "Con pollo, crema y queso", 55)
                         .opciones("Salsa", o("Verde"), o("Roja")).etiqueta("Favorito")
                         .foto("res:food_chilaquiles").prep(6, 10)
@@ -249,8 +227,6 @@ public class DatosIniciales implements CommandLineRunner {
         );
     }
 
-    // ---------- Cafetería El Balcón ----------
-
     private static List<Plato> balcon() {
         return List.of(
                 p(BALCON, DIARIO, "Sándwich", "Pan de caja, lechuga y jitomate", 40)
@@ -292,13 +268,10 @@ public class DatosIniciales implements CommandLineRunner {
         );
     }
 
-    // ---------- Pedidos de ejemplo ----------
-
     private void pedidosDeEjemplo(List<Producto> menu) {
         Integer juanId = usuarios.findFirstByMatriculaIgnoreCaseOrCorreoIgnoreCase(ALUMNO_MATRICULA, ALUMNO_MATRICULA)
                 .map(Usuario::getId).orElse(null);
 
-        // Historial del alumno de prueba
         Pedido p1 = pedido(juanId, ALUMNO_NOMBRE, ALUMNO_MATRICULA, NIDO, EstadoPedido.ENTREGADO, momento(8, 10, 5));
         p1.setMinutosPrep(6);
         linea(p1, menu, "Torta", 1, "Milanesa", null);
@@ -309,7 +282,6 @@ public class DatosIniciales implements CommandLineRunner {
         linea(p2, menu, "Capuchino", 1, null, null);
         linea(p2, menu, "Concha", 1, "Chocolate", null);
 
-        // Nido de Halcón, hoy
         Pedido p3 = pedido(null, "Luis Gómez", "20212DN044", NIDO, EstadoPedido.CANCELADO, momento(11, 5, 0));
         p3.setMotivo("Falta de ingrediente (Chile poblano)");
         linea(p3, menu, "Taco Acorazado de Chile Relleno", 1, null, null);
@@ -338,7 +310,6 @@ public class DatosIniciales implements CommandLineRunner {
         linea(p8, menu, "Sopes (2)", 1, "Tinga", "Salsa aparte");
         linea(p8, menu, "Agua fresca 500 ml", 1, null, null);
 
-        // El Balcón, hoy
         Pedido p9 = pedido(null, "Jorge Ramírez", "20221TI033", BALCON, EstadoPedido.ENTREGADO, momento(10, 40, 0));
         p9.setMinutosPrep(5);
         linea(p9, menu, "Café americano", 1, "16 oz", null);
@@ -362,7 +333,6 @@ public class DatosIniciales implements CommandLineRunner {
         return p;
     }
 
-    // Si no se indica opción se toma la primera, igual que en la app
     private void linea(Pedido pedido, List<Producto> menu, String nombre, int cantidad, String opcion, String nota) {
         Producto producto = menu.stream()
                 .filter(x -> x.getCafeteriaId().equals(pedido.getCafeteriaId()) && x.getNombre().equals(nombre))
@@ -383,7 +353,6 @@ public class DatosIniciales implements CommandLineRunner {
                 .toInstant().toEpochMilli();
     }
 
-    // Ayuda a escribir cada platillo en una sola línea: p(...).dia(1).opciones(...).prep(5, 8)
     private static final class Plato {
         private final Producto p = new Producto();
 

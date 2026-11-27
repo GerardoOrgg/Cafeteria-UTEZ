@@ -7,12 +7,9 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-// Tabla "cafeterias": las dos cafeterías y su tiempo de espera actual
 @Entity
 @Table(name = "cafeterias")
 public class Cafeteria {
-
-    // "nido" o "balcon" (el mismo id que usa la app)
     @Id
     @Column(length = 20)
     private String id;

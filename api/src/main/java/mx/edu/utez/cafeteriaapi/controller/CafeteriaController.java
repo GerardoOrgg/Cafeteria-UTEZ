@@ -18,14 +18,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-/**
- * GET /api/cafeterias              -> las dos cafeterías con su tiempo de espera
- * PUT /api/cafeterias/{id}/tiempo  -> el encargado cambia el tiempo de espera
- */
 @RestController
 @RequestMapping("/api/cafeterias")
 public class CafeteriaController {
-
     private final CafeteriaRepository cafeterias;
     private final AuthService auth;
 

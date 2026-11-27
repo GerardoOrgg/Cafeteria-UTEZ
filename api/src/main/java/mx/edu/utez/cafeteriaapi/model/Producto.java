@@ -17,27 +17,22 @@ import jakarta.persistence.Table;
 import java.util.ArrayList;
 import java.util.List;
 
-// Tabla "productos": los platillos. Cada cafetería tiene su propio menú (cafeteriaId)
 @Entity
 @Table(name = "productos")
 public class Producto {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    // "nido" o "balcon"
     @Column(nullable = false, length = 20)
     private String cafeteriaId;
 
     @Column(nullable = false, length = 100)
     private String nombre;
 
-    // Texto corto para las tarjetas
     @Column(nullable = false, length = 200)
     private String descripcion = "";
 
-    // Pesos enteros
     @Column(nullable = false)
     private Integer precio;
 
@@ -45,18 +40,14 @@ public class Producto {
     @Column(nullable = false, length = 20)
     private Categoria categoria;
 
-    // Solo especiales: 1 = lunes ... 5 = viernes
     private Integer dia;
 
-    // Descripción larga para la hoja de detalle
     @Column(length = 1000)
     private String detalle = "";
 
-    // "Favorito", "Rápido", "Fit"...
     @Column(length = 30)
     private String etiqueta;
 
-    // "res:nombre_drawable" para fotos incluidas en la app, o "/fotos/archivo.jpg" para las que subió el encargado
     @Column(length = 200)
     private String foto;
 
@@ -66,17 +57,14 @@ public class Producto {
 
     private int prepMax = 10;
 
-    // Ej. "Tipo de milanesa" (si hay opciones, elegir una es obligatorio)
     @Column(length = 80)
     private String grupoOpciones;
 
-    // Se guardan en la tabla "producto_opciones"; @OrderColumn respeta el orden en que se escribieron
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "producto_opciones", joinColumns = @JoinColumn(name = "producto_id"))
     @OrderColumn(name = "orden")
     private List<Opcion> opciones = new ArrayList<>();
 
-    // Ej. "Porción individual recomendada: 1–2 pzas"
     @Column(length = 200)
     private String recomendacion;
 

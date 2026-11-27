@@ -17,12 +17,9 @@ import jakarta.persistence.Table;
 import java.util.ArrayList;
 import java.util.List;
 
-// Tabla "pedidos". Cada pedido pertenece a UNA cafetería: solo su encargado lo ve en Comandas
 @Entity
 @Table(name = "pedidos")
 public class Pedido {
-
-    // El número que se le dice al alumno ("Pedido #12"); lo genera MySQL
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer numero;
@@ -42,7 +39,6 @@ public class Pedido {
     @Column(nullable = false, length = 20)
     private EstadoPedido estado = EstadoPedido.RECIBIDO;
 
-    // Milisegundos desde 1970 (así lo usa la app para mostrar "Hoy 11:54 AM")
     private long creadoEn;
 
     @Column(length = 200)
@@ -51,14 +47,11 @@ public class Pedido {
     @Column(length = 30)
     private String mostrador = "Mostrador 1";
 
-    // Minutos que tardó, se calcula al entregar
     private Integer minutosPrep;
 
-    // Motivo de cancelación
     @Column(length = 200)
     private String motivo;
 
-    // Los platillos del pedido, en la tabla "pedido_lineas"
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "pedido_lineas", joinColumns = @JoinColumn(name = "pedido_numero"))
     @OrderColumn(name = "orden")

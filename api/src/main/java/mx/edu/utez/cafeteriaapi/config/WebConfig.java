@@ -8,14 +8,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
-
     private final FotoService fotos;
 
     public WebConfig(FotoService fotos) {
         this.fotos = fotos;
     }
 
-    // Sirve los archivos de la carpeta "fotos" en /fotos/** para que la app (Coil) los descargue
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         String ubicacion = fotos.getCarpeta().toUri().toString();
@@ -25,7 +23,6 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addResourceHandler(FotoService.PREFIJO + "**").addResourceLocations(ubicacion);
     }
 
-    // Permite probar la API desde el navegador u otras páginas (la app Android no lo necesita)
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**").allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE");

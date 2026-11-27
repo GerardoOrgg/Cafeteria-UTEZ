@@ -25,12 +25,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Pedidos: el alumno los crea y el encargado de ESA cafetería los avanza o cancela.
- */
 @Service
 public class PedidoService {
-
     private static final List<String> DIAS = List.of("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo");
 
     private final PedidoRepository pedidos;
@@ -51,12 +47,10 @@ public class PedidoService {
         this.zona = ZoneId.of(zona);
     }
 
-    // 1 = lunes ... 7 = domingo (igual que Dias.hoy() en la app)
     public int diaDeHoy() {
         return LocalDate.now(zona).getDayOfWeek().getValue();
     }
 
-    // Encargado: ?cafeteriaId=nido   ·   Alumno: ?matricula=20213TI045
     public List<Pedido> listar(String cafeteriaId, String matricula) {
         if (cafeteriaId != null && !cafeteriaId.isBlank()) {
             return pedidos.findByCafeteriaIdOrderByNumeroDesc(cafeteriaId);
@@ -71,10 +65,6 @@ public class PedidoService {
         return pedidos.findById(numero).orElseThrow(() -> ApiException.noEncontrado("No existe el pedido #" + numero + "."));
     }
 
-    /**
-     * Crea el pedido en estado RECIBIDO. Los precios se toman de la base, no de la app,
-     * y se revisa que cada platillo sea de esa cafetería, haya en barra y (si es especial) toque hoy.
-     */
     @Transactional
     public Pedido crear(PedidoRequest datos) {
         Usuario alumno = usuarios.findById(datos.usuarioId())
@@ -105,7 +95,6 @@ public class PedidoService {
                 throw ApiException.invalido("\"" + p.getNombre() + "\" solo se vende el " + DIAS.get(p.getDia() - 1) + ".");
             }
 
-            // Si el platillo tiene opciones, elegir una válida es obligatorio
             String opcion = null;
             int extra = 0;
             if (!p.getOpciones().isEmpty()) {
@@ -122,7 +111,6 @@ public class PedidoService {
         return pedidos.save(pedido);
     }
 
-    // RECIBIDO -> PREPARANDO -> LISTO -> ENTREGADO
     @Transactional
     public Pedido avanzar(Integer numero, Integer usuarioId) {
         Pedido p = obtener(numero);

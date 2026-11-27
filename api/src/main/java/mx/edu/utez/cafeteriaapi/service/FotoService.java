@@ -14,13 +14,8 @@ import java.nio.file.StandardCopyOption;
 import java.util.Locale;
 import java.util.UUID;
 
-/**
- * Fotos de platillos que el encargado toma con la cámara.
- * Se guardan en la carpeta "fotos" del servidor y se sirven en http://IP:8080/fotos/archivo.jpg
- */
 @Service
 public class FotoService {
-
     public static final String PREFIJO = "/fotos/";
 
     private final Path carpeta;
@@ -34,7 +29,6 @@ public class FotoService {
         return carpeta;
     }
 
-    // Guarda la foto con un nombre único y regresa su ruta pública ("/fotos/uuid.jpg")
     public String guardar(MultipartFile archivo) {
         if (archivo == null || archivo.isEmpty()) {
             throw ApiException.invalido("No llegó ninguna foto.");
@@ -52,20 +46,17 @@ public class FotoService {
         return PREFIJO + nombre;
     }
 
-    // Borra la foto del disco si era una subida al servidor (las "res:" vienen dentro de la app)
     public void borrar(String ruta) {
         if (ruta == null || !ruta.startsWith(PREFIJO)) {
             return;
         }
         Path archivo = carpeta.resolve(ruta.substring(PREFIJO.length())).normalize();
-        // Seguridad: nunca borrar algo fuera de la carpeta de fotos
         if (!archivo.startsWith(carpeta)) {
             return;
         }
         try {
             Files.deleteIfExists(archivo);
         } catch (IOException ignorado) {
-            // Si no se pudo borrar, solo queda el archivo huérfano
         }
     }
 

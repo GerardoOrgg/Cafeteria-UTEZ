@@ -21,18 +21,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-/**
- * GET    /api/productos?cafeteriaId=nido   -> menú (sin parámetro: las dos cafeterías)
- * GET    /api/productos/{id}
- * POST   /api/productos                   -> alta (solo encargado)
- * PUT    /api/productos/{id}              -> edición (solo el encargado de esa cafetería)
- * PATCH  /api/productos/{id}/disponible   -> hay / agotado
- * DELETE /api/productos/{id}
- */
 @RestController
 @RequestMapping("/api/productos")
 public class ProductoController {
-
     private final ProductoService servicio;
 
     public ProductoController(ProductoService servicio) {

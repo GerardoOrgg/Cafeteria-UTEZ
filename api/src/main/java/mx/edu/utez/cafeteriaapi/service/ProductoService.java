@@ -14,12 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Menú de cada cafetería: consultar, dar de alta, editar, marcar agotado y borrar platillos.
- */
 @Service
 public class ProductoService {
-
     public static final int PRECIO_MAXIMO = 2000;
 
     private final ProductoRepository productos;
@@ -32,7 +28,6 @@ public class ProductoService {
         this.fotos = fotos;
     }
 
-    // Sin cafeteriaId regresa el menú de las dos
     public List<Producto> listar(String cafeteriaId) {
         if (cafeteriaId == null || cafeteriaId.isBlank()) {
             return productos.findAllByOrderByCategoriaAscDiaAscNombreAsc();
@@ -44,7 +39,6 @@ public class ProductoService {
         return productos.findById(id).orElseThrow(() -> ApiException.noEncontrado("Ese platillo ya no existe."));
     }
 
-    // El platillo siempre se guarda en la cafetería del encargado que lo crea
     @Transactional
     public Producto crear(ProductoDto datos, Integer usuarioId) {
         Usuario encargado = auth.exigirEncargado(usuarioId, null);
@@ -62,14 +56,12 @@ public class ProductoService {
         String fotoAnterior = p.getFoto();
         aplicar(p, datos);
         Producto guardado = productos.save(p);
-        // Si cambió la foto, se borra el archivo viejo del servidor
         if (fotoAnterior != null && !fotoAnterior.equals(guardado.getFoto())) {
             fotos.borrar(fotoAnterior);
         }
         return guardado;
     }
 
-    // Switch de "Menú & Stock": hay / no hay en barra
     @Transactional
     public Producto cambiarDisponible(Integer id, boolean disponible, Integer usuarioId) {
         Producto p = obtener(id);
@@ -78,7 +70,6 @@ public class ProductoService {
         return productos.save(p);
     }
 
-    // Los pedidos que ya lo tienen no cambian: guardan su propia copia del platillo
     @Transactional
     public void borrar(Integer id, Integer usuarioId) {
         Producto p = obtener(id);
@@ -87,7 +78,6 @@ public class ProductoService {
         fotos.borrar(p.getFoto());
     }
 
-    // Copia los datos que mandó la app al platillo, validando cada uno
     private void aplicar(Producto p, ProductoDto d) {
         String nombre = texto(d.nombre());
         if (nombre == null) throw ApiException.invalido("Escribe el nombre del platillo.");
@@ -104,7 +94,6 @@ public class ProductoService {
             throw ApiException.invalido("Elige una categoría.");
         }
 
-        // Los especiales necesitan día (1 = lunes ... 5 = viernes); los demás no llevan
         Integer dia = null;
         if (categoria == Categoria.ESPECIAL) {
             if (d.dia() == null || d.dia() < 1 || d.dia() > 5) {
@@ -119,7 +108,6 @@ public class ProductoService {
             throw ApiException.invalido("Revisa el tiempo de preparación (mínimo 1, y el máximo mayor o igual al mínimo).");
         }
 
-        // La foto debe venir del servidor ("/fotos/...") o de la app ("res:..."): una ruta del teléfono no sirve aquí
         String foto = texto(d.foto());
         if (foto != null && !foto.startsWith(FotoService.PREFIJO) && !foto.startsWith("res:")) {
             throw ApiException.invalido("La foto no se subió al servidor. Vuelve a intentarlo.");
@@ -155,7 +143,6 @@ public class ProductoService {
         p.setRecomendacion(texto(d.recomendacion()));
     }
 
-    // null si viene vacío
     private static String texto(String s) {
         if (s == null) return null;
         String t = s.trim();

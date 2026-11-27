@@ -9,12 +9,7 @@ import mx.edu.utez.cafeteriaapi.model.Usuario;
 
 import java.util.List;
 
-/**
- * Lo que la API REGRESA a la app (y lo que manda la app al crear/editar un platillo).
- * Nunca se regresa la entidad directo: así la contraseña (hash) jamás sale del servidor.
- */
 public final class Respuestas {
-
     private Respuestas() {
     }
 
@@ -33,7 +28,6 @@ public final class Respuestas {
         }
     }
 
-    // Mismos campos que la clase Producto de la app
     public record ProductoDto(
             Integer id,
             String cafeteriaId,
@@ -101,7 +95,6 @@ public final class Respuestas {
         }
     }
 
-    // Ruta pública de una foto subida, ej. "/fotos/3f2a....jpg"
     public record FotoDto(String ruta) {
     }
 }

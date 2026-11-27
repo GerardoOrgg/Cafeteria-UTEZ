@@ -19,18 +19,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-/**
- * GET   /api/pedidos?cafeteriaId=nido        -> comandas de una cafetería (encargado)
- * GET   /api/pedidos?matricula=20213TI045    -> "Mis pedidos" (alumno)
- * GET   /api/pedidos/{numero}
- * POST  /api/pedidos                         -> el alumno confirma su carrito
- * PATCH /api/pedidos/{numero}/avanzar        -> siguiente estado (encargado)
- * PATCH /api/pedidos/{numero}/cancelar       -> cancelar con motivo (encargado)
- */
 @RestController
 @RequestMapping("/api/pedidos")
 public class PedidoController {
-
     private final PedidoService servicio;
 
     public PedidoController(PedidoService servicio) {

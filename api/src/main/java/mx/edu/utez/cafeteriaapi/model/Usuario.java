@@ -9,11 +9,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-// Tabla "usuarios": alumnos y encargados
 @Entity
 @Table(name = "usuarios")
 public class Usuario {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -21,14 +19,12 @@ public class Usuario {
     @Column(nullable = false, length = 100)
     private String nombre;
 
-    // Los encargados usan su correo aquí también
     @Column(nullable = false, unique = true, length = 100)
     private String matricula;
 
     @Column(nullable = false, unique = true, length = 120)
     private String correo;
 
-    // SHA-256, nunca la contraseña tal cual
     @Column(nullable = false, length = 64)
     private String contrasenaHash;
 
@@ -36,7 +32,6 @@ public class Usuario {
     @Column(nullable = false, length = 20)
     private Rol rol;
 
-    // Solo encargados: la cafetería que atienden ("nido" o "balcon")
     @Column(length = 20)
     private String cafeteriaId;
 
