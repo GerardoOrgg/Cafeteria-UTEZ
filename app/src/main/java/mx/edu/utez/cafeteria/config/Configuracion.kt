@@ -1,7 +1,7 @@
 package mx.edu.utez.cafeteria.config
 
 object Configuracion {
-    const val URL_SERVIDOR = "http://192.168.0.6:8080/"
+    const val URL_SERVIDOR = "http://localhost:8080/"
 
     const val SEGUNDOS_ACTUALIZAR = 5L
 

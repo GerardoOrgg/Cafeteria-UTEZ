@@ -188,7 +188,6 @@ private fun CarritoPreview() {
         CarritoScreen(
             state = AppUiState(
                 cafeteriaElegida = "nido",
-                productos = DatosIniciales.productos,
                 carrito = listOf(ItemCarrito(1, "Pollo empanizado", 0, "Salsa aparte", 2))
             ),
             onSumar = {}, onRestar = {}, onNota = {}, onConfirmar = {}, onCerrar = {}

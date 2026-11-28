@@ -242,19 +242,7 @@ fun LoginScreen(
                 }
             }
 
-            if (Configuracion.MOSTRAR_CUENTAS_PRUEBA && !registrando) {
-                Surface(color = Cafe.AzulInfo, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text("Cuentas de prueba", color = Cafe.AmbarTexto, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-                        val lineas = if (rol == Rol.ALUMNO) {
-                            listOf("${Configuracion.ALUMNO_DEMO_MATRICULA} / ${Configuracion.ALUMNO_DEMO_CONTRASENA}")
-                        } else {
-                            Configuracion.ENCARGADOS.map { "${it.correo} / ${it.contrasena}" }
-                        }
-                        lineas.forEach { Text(it, color = Cafe.Texto, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace) }
-                    }
-                }
-            }
+          
 
             Text(
                 "Universidad Tecnológica Emiliano Zapata del Estado de Morelos",
