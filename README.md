@@ -1,5 +1,13 @@
 # Cafetería UTEZ
 
+## Equipo
+
+| Nombre | Matrícula |
+|---|---|
+| Luis Gerardo Barrón Flores | 20253ds064 |
+| Miguel Chávez García | 20253ds075 |
+| Cristian Eduardo Gómez Nava | 20253ds085 |
+
 App Android para hacer pre-pedidos en las cafeterías de la UTEZ (**Nido de Halcón** y **El Balcón**) y pasar a recogerlos. Tiene dos partes:
 
 | Carpeta | Qué es | Tecnología |
