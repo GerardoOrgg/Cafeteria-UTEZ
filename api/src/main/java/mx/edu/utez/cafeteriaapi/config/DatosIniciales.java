@@ -2,27 +2,20 @@ package mx.edu.utez.cafeteriaapi.config;
 
 import mx.edu.utez.cafeteriaapi.model.Cafeteria;
 import mx.edu.utez.cafeteriaapi.model.Categoria;
-import mx.edu.utez.cafeteriaapi.model.EstadoPedido;
-import mx.edu.utez.cafeteriaapi.model.LineaPedido;
 import mx.edu.utez.cafeteriaapi.model.Opcion;
-import mx.edu.utez.cafeteriaapi.model.Pedido;
 import mx.edu.utez.cafeteriaapi.model.Producto;
 import mx.edu.utez.cafeteriaapi.model.Rol;
 import mx.edu.utez.cafeteriaapi.model.Usuario;
 import mx.edu.utez.cafeteriaapi.repository.CafeteriaRepository;
-import mx.edu.utez.cafeteriaapi.repository.PedidoRepository;
 import mx.edu.utez.cafeteriaapi.repository.ProductoRepository;
 import mx.edu.utez.cafeteriaapi.repository.UsuarioRepository;
 import mx.edu.utez.cafeteriaapi.service.AuthService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,16 +38,10 @@ public class DatosIniciales implements CommandLineRunner {
     private final UsuarioRepository usuarios;
     private final CafeteriaRepository cafeterias;
     private final ProductoRepository productos;
-    private final PedidoRepository pedidos;
-    private final ZoneId zona;
-
-    public DatosIniciales(UsuarioRepository usuarios, CafeteriaRepository cafeterias, ProductoRepository productos,
-                          PedidoRepository pedidos, @Value("${app.zona-horaria:America/Mexico_City}") String zona) {
+    public DatosIniciales(UsuarioRepository usuarios, CafeteriaRepository cafeterias, ProductoRepository productos) {
         this.usuarios = usuarios;
         this.cafeterias = cafeterias;
         this.productos = productos;
-        this.pedidos = pedidos;
-        this.zona = ZoneId.of(zona);
     }
 
     @Override
@@ -77,8 +64,7 @@ public class DatosIniciales implements CommandLineRunner {
             for (Plato plato : nido()) menu.add(plato.p);
             for (Plato plato : balcon()) menu.add(plato.p);
             List<Producto> guardados = productos.saveAll(menu);
-            pedidosDeEjemplo(guardados);
-            log.info("Base de datos llenada con {} platillos y pedidos de ejemplo", guardados.size());
+            log.info("Base de datos llenada con {} platillos", guardados.size());
         }
     }
 
@@ -266,91 +252,6 @@ public class DatosIniciales implements CommandLineRunner {
                 p(BALCON, POSTRES, "Rebanada de pay de queso", "Con mermelada", 35).prep(1, 2),
                 p(BALCON, POSTRES, "Galleta de avena", "Grande", 12).prep(1, 1)
         );
-    }
-
-    private void pedidosDeEjemplo(List<Producto> menu) {
-        Integer juanId = usuarios.findFirstByMatriculaIgnoreCaseOrCorreoIgnoreCase(ALUMNO_MATRICULA, ALUMNO_MATRICULA)
-                .map(Usuario::getId).orElse(null);
-
-        Pedido p1 = pedido(juanId, ALUMNO_NOMBRE, ALUMNO_MATRICULA, NIDO, EstadoPedido.ENTREGADO, momento(8, 10, 5));
-        p1.setMinutosPrep(6);
-        linea(p1, menu, "Torta", 1, "Milanesa", null);
-        linea(p1, menu, "Café de olla", 1, null, null);
-
-        Pedido p2 = pedido(juanId, ALUMNO_NOMBRE, ALUMNO_MATRICULA, BALCON, EstadoPedido.ENTREGADO, momento(9, 30, 4));
-        p2.setMinutosPrep(4);
-        linea(p2, menu, "Capuchino", 1, null, null);
-        linea(p2, menu, "Concha", 1, "Chocolate", null);
-
-        Pedido p3 = pedido(null, "Luis Gómez", "20212DN044", NIDO, EstadoPedido.CANCELADO, momento(11, 5, 0));
-        p3.setMotivo("Falta de ingrediente (Chile poblano)");
-        linea(p3, menu, "Taco Acorazado de Chile Relleno", 1, null, null);
-
-        Pedido p4 = pedido(null, "Sofía Morales", "20233TI101", NIDO, EstadoPedido.ENTREGADO, momento(11, 21, 0));
-        p4.setMinutosPrep(8);
-        linea(p4, menu, "Chilaquiles", 1, "Roja", null);
-
-        Pedido p5 = pedido(null, "Carlos Ruiz", "20203ID088", NIDO, EstadoPedido.ENTREGADO, momento(11, 35, 0));
-        p5.setMostrador("Mostrador 2");
-        p5.setMinutosPrep(11);
-        linea(p5, menu, "Torta", 2, "Pechuga", null);
-        linea(p5, menu, "Refresco 600 ml", 1, null, null);
-
-        Pedido p6 = pedido(null, "María Torres", "20223TE012", NIDO, EstadoPedido.ENTREGADO, momento(11, 42, 0));
-        p6.setMinutosPrep(7);
-        linea(p6, menu, "Quesadillas (3)", 1, "Tinga", null);
-        linea(p6, menu, "Agua fresca 500 ml", 1, "Horchata", null);
-
-        Pedido p7 = pedido(null, "Ana López", "20241TI007", NIDO, EstadoPedido.PREPARANDO, momento(11, 50, 0));
-        linea(p7, menu, "Enchiladas (4)", 1, "Verdes", null);
-        linea(p7, menu, "Agua fresca 500 ml", 1, "Jamaica", null);
-
-        Pedido p8 = pedido(null, "Diego Hernández", "20232TI019", NIDO, EstadoPedido.RECIBIDO, momento(11, 54, 0));
-        p8.setNota("Sin cebolla");
-        linea(p8, menu, "Sopes (2)", 1, "Tinga", "Salsa aparte");
-        linea(p8, menu, "Agua fresca 500 ml", 1, null, null);
-
-        Pedido p9 = pedido(null, "Jorge Ramírez", "20221TI033", BALCON, EstadoPedido.ENTREGADO, momento(10, 40, 0));
-        p9.setMinutosPrep(5);
-        linea(p9, menu, "Café americano", 1, "16 oz", null);
-        linea(p9, menu, "Muffin", 1, "Moras", null);
-
-        Pedido p10 = pedido(null, "Valeria Cruz", "20242TI015", BALCON, EstadoPedido.RECIBIDO, momento(11, 58, 0));
-        linea(p10, menu, "Frappé", 1, "Cajeta", null);
-        linea(p10, menu, "Sándwich", 1, "Panela", null);
-
-        pedidos.saveAll(List.of(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10));
-    }
-
-    private Pedido pedido(Integer usuarioId, String cliente, String matricula, String cafeteria, EstadoPedido estado, long creadoEn) {
-        Pedido p = new Pedido();
-        p.setUsuarioId(usuarioId);
-        p.setClienteNombre(cliente);
-        p.setMatricula(matricula);
-        p.setCafeteriaId(cafeteria);
-        p.setEstado(estado);
-        p.setCreadoEn(creadoEn);
-        return p;
-    }
-
-    private void linea(Pedido pedido, List<Producto> menu, String nombre, int cantidad, String opcion, String nota) {
-        Producto producto = menu.stream()
-                .filter(x -> x.getCafeteriaId().equals(pedido.getCafeteriaId()) && x.getNombre().equals(nombre))
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("No existe el platillo de ejemplo " + nombre));
-        Opcion elegida = producto.getOpciones().stream()
-                .filter(x -> x.getNombre().equals(opcion))
-                .findFirst()
-                .orElse(producto.getOpciones().isEmpty() ? null : producto.getOpciones().get(0));
-        int extra = elegida == null ? 0 : elegida.getExtra();
-        pedido.getLineas().add(new LineaPedido(producto, elegida == null ? null : elegida.getNombre(), nota,
-                producto.getPrecio() + extra, cantidad));
-    }
-
-    private long momento(int hora, int minuto, int diasAtras) {
-        return ZonedDateTime.now(zona).minusDays(diasAtras)
-                .withHour(hora).withMinute(minuto).withSecond(0).withNano(0)
-                .toInstant().toEpochMilli();
     }
 
     private static final class Plato {
